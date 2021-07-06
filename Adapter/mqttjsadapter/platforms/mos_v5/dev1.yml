@@ -1,0 +1,48 @@
+# server
+platform_name: mos5 # used for js debug
+
+protocol: mqtt
+host: 127.0.0.1
+port: 1883
+
+# not neccessary, default is Mqtt3.1.1 (4)
+mqttVersion: 5
+
+properties:
+  authenticationMethod: all-pass-rt
+  authenticationData:  This is the auth data,,,
+
+# authPacket:
+#   authenticationMethod: all-pass-rt
+#   authenticationData:  This is the auth data,,,
+
+will:
+  topic: /devices/me/state
+  payload: i am dead
+  qos: 1
+
+# Connect 
+username: test1
+clientId: fake1
+password:
+  # fixed: password 
+  method: fixed
+  token: no use1
+
+# subscribe 
+sub_defaults:
+  qos: 1
+  topic: /devices/me/config
+
+unsub_defaults:
+  qos: 1
+  topic: /devices/me/config
+
+# publish
+pub_defaults:
+  qos: 1
+  topic: /devices/me/state
+  retain: true
+  payload:
+    method: fixed
+    data: '{"msg": "this is a payload"}'

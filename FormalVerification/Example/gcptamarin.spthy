@@ -1,0 +1,645 @@
+theory GCPIOT
+begin
+
+builtins: asymmetric-encryption, multiset, symmetric-encryption,signing,hashing,diffie-hellman
+
+functions: jwt/3, get_jwt_data/1, jwt_verify/3, jwt_fmt/1
+equations: get_jwt_data(jwt(data, key, fmt))=data
+equations: jwt_verify(jwt(data, key, fmt), data, pk(key)) = true
+equations: jwt_fmt(jwt(data, key, fmt)) = fmt
+
+rule reveal_dev_sk:
+let
+    pkDev = pk(~skDev)
+    credentials = <~keyFmt, ~skDev, pkDev>
+    clientId = <$projectId, $region, $registryId, ~deviceId>   
+    context = $Server
+in
+[ !St_dev_0_Init(clientId, credentials, context) ]--[ Reveal(<'dev',~deviceId>, <'sk', ~skDev>) ]->[ Out(~skDev) ]
+
+
+rule reveal_tls_key:
+    [ !St_KeyNegotiated($Server, ~deviceId, ~key) ]--[ Src_Tls_Keyout(~key) ]->[ Out(~key) ]
+
+rule init_server:
+    [ ]--[ Start_Server_1($Server) ]->[ St_sev_prev_0_Init($Server),!Server($Server) ]
+
+rule init_dev:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>   
+        context = $Server
+    in
+    [ Fr(~skDev), Fr(~deviceId), Fr(~keyFmt), !Server($Server) ]--[ Start_Dev_1(~deviceId), Src_NotKey(~skDev, ~deviceId, ~keyFmt) ]->[ !St_dev_0_Init(clientId, credentials, context), Factory_Provision(clientId, pkDev) ]
+
+rule register_dev_in_serv:
+    let
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+    in
+    [ St_sev_prev_0_Init($Server), Factory_Provision(clientId, pkDev) ]--[ Loop_dev_Idle_Begin($Server, ~deviceId), Start_Server_2_Create_Dev($Server), In_NotKeys() ]->[ !St_serv_0_Init($Server, clientId, pkDev) ]
+
+rule magical_process_of_key_negotiation:
+    let
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = $Server
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+    in
+    [ !St_serv_0_Init($Server, clientId, pkDevInServer), !St_dev_0_Init(clientId, credentials, context), Fr(~key) ]--[ IsKey(~key) ]->[ St_serv_prev_1_KeyNegotiated($Server, clientId, pkDevInServer, ~key), St_dev_prev_1_KeyNegotiated(clientId, credentials, context, ~key), !St_KeyNegotiated($Server, ~deviceId, ~key) ]
+
+rule dev_send_connect:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        token = <'time', $projectId>
+        password=jwt(token, ~skDev, ~keyFmt)
+        username='unused'
+        connectArgs = <clientId, username, password>
+        conn = senc(connectArgs, ~key)
+        context = $Server
+        newContext = <$Server, ~session>
+        tlsContext = ~key
+    in
+    [ St_dev_prev_1_KeyNegotiated(clientId, credentials, context, ~key), Fr(~session) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'sk', ~skDev), Secret(<'dev', ~deviceId>, 'devId', ~deviceId), Create('con', 'dev', ~deviceId), Running(~deviceId, $Server, <'serv', 'dev', <'devId', ~deviceId>>), Running(~deviceId, $Server, <'serv', 'dev', <'keyFmt', ~keyFmt>>), Running(~deviceId, $Server, <'serv', 'dev', <'projectId', $projectId>>), Start_Dev_2_WaitConnect(~deviceId), Src_Dev_Con(conn) ]->[ St_dev_1_0_WaitConnack(clientId, credentials, newContext, tlsContext), Out(conn) ]
+
+rule serv_send_connack:
+    let
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        token = <'time', $projectId>
+        username = 'unused'
+        connectArgs = <clientId, username, password>
+        connack = senc('0', ~key)
+        keyFmt = jwt_fmt(password)
+        conn = senc(connectArgs,~key)
+        newTlsContext = ~key
+        context = <$Server, ~session>
+    in
+    [ St_serv_prev_1_KeyNegotiated($Server, clientId, pkDev, ~key), Fr(~session), In(conn) ]--[ Eq(jwt_verify(password, token, pkDev), true), Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'serv', $Server>, 'devId', ~deviceId), Create('con', 'serv', $Server), Commit ($Server, ~deviceId, <'serv', 'dev', <'devId', ~deviceId>>), Commit ($Server, ~deviceId, <'serv', 'dev', <'keyFmt', keyFmt>>), Commit ($Server, ~deviceId, <'serv', 'dev', <'projectId', $projectId>>), Running(~deviceId, $Server, <'serv', 'dev', <'projectId', $projectId>>), Running(~deviceId, $Server, <'serv', 'dev', <'connack', conn>>), ConnectUnique(<$Server, ~deviceId>), Loop_serv_Connect_Begin($Server, ~deviceId), Loop_serv_Connect_Enter($Server, ~deviceId, ~session), Start_Serv_3_Connack($Server), In_Serv_Con(~deviceId, ~key, conn), Src_Serv_Connack(connack) ]->[ St_serv_1_Connected(clientId, pkDev, context, newTlsContext), Out(connack) ]
+
+rule dev_recv_connack:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        connack = senc('0',~key)
+        context = <$Server, ~session>
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_dev_1_0_WaitConnack(clientId, credentials, context, tlsContext), In(connack) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'sk', ~skDev), Secret(<'dev', ~deviceId>, 'devId', ~deviceId), Start_Dev_3_Connack(~deviceId), Loop_dev_Connect_Begin($Server, ~deviceId), Loop_dev_Connect_Enter($Server, ~deviceId, ~session), Commit(~deviceId, $Server, <'dev', 'serv', <'devId', ~deviceId>>), Commit(~deviceId, $Server, <'dev', 'serv', <'connack', connack>>), In_Dev_Connack('0', connack) ]->[ St_dev_1_Connected(clientId, credentials, context, newTlsContext) ]
+
+rule dev_send_disconnect:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        disconnectArgs = 'discon'
+        tlsContext    = ~key
+        disconnect = senc{disconnectArgs}~key
+        context = <$Server, ~session>
+    in
+    [ St_dev_1_Connected(clientId, credentials, context, tlsContext) ]--[ Create('discon', 'dev', ~deviceId), Running(~deviceId, $Server, <'serv', 'dev', <'discon', disconnect>>), Honest(<'dev',~deviceId>), Honest(<'serv',$Server>), Loop_dev_Connect_Exit($Server, ~deviceId, ~session) ]->[ Out(disconnect) ]
+
+rule server_recv_disconnect:
+    let
+        disconnectArgs = 'discon'
+        disconnect = senc{disconnectArgs}~key
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        tlsContext    = ~key
+    in
+    [ St_serv_1_Connected(clientId, pkDev, context, tlsContext), In(disconnect) ]--[ Honest(<'dev',~deviceId>), Honest(<'serv',$Server>), Commit ($Server, ~deviceId, <'serv', 'dev', <'discon', 'dicon'>>), Loop_serv_Connect_Exit($Server, ~deviceId, ~session) ]->[ ]
+
+rule dev_send_subscribe:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        newContext = <$Server, ~session>
+        subscribeArgs = <~deviceId, ~topic, ~qos>
+        sub = senc{subscribeArgs}~key
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_dev_1_Connected(clientId, credentials, context, tlsContext), Fr(~topic), Fr(~qos) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'subTopic', ~topic), Create('sub', 'dev', ~deviceId), Running(~deviceId, $Server, <'serv', 'dev', <'subTopic', ~topic>>), Start_Dev_4_WaitSubscribe(~deviceId), Src_Dev_Sub(~deviceId, sub) ]->[ St_dev_2_0_WaitSuback(clientId, credentials, newContext, <~topic, ~qos>, newTlsContext), Out(sub) ]
+
+rule serv_send_suback:
+    let
+        subackMsg = <'0', ~serverQos>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        subscribeArgs = <~deviceId, topic, qos>
+        sub = senc{subscribeArgs}~key
+        suback = senc{subackMsg}~key
+        subscription = <topic, ~serverQos>
+        context = <$Server, ~session>
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_serv_1_Connected(clientId, pkDev, context, tlsContext), Fr(~serverQos), In(sub) ]
+    --[  Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'serv', $Server>, 'subTopic', topic), Create('sub', 'serv', $Server), Running($Server, ~deviceId, <'dev', 'serv', <'subTopic', topic>>), Running($Server, ~deviceId, <'dev', 'serv', <'suback', suback>>), Commit ($Server, ~deviceId, <'serv', 'dev', <'subTopic', topic>>), Start_Serv_4_Suback($Server), In_Serv_Sub(~deviceId, topic, qos, ~key, sub), Src_Serv_Suback(suback) ]->[ St_serv_2_Subcribed(clientId, pkDev, subscription, context, newTlsContext), Out(suback) ]
+
+rule dev_recv_suback:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        subackMsg = <'0', qos>
+        suback = senc{subackMsg}~key
+        subscription  = <~topic, qos>
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_dev_2_0_WaitSuback(clientId, credentials, context, <~topic, desiredQos>, tlsContext), In(suback) ]--[ Start_Dev_5_Subscribed(~deviceId), Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'subTopic', ~topic), Commit(~deviceId, $Server, <'dev', 'serv', <'subTopic', ~topic>>), Commit(~deviceId, $Server, <'dev', 'serv', <'suback', suback>>), In_Dev_Suback('0', qos, suback) ]->[ St_dev_2_Subscribed(clientId, credentials, context, newTlsContext, subscription) ]
+
+rule dev_send_unsubcribe:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        newContext = <$Server, ~session>
+        subscription = <~topic, qos>
+        unsubscribeArgs = <~deviceId, ~topic>
+        tlsContext    = ~key
+        newTlsContext = ~key
+        unsub = senc{unsubscribeArgs}~key
+    in
+    [ St_dev_2_Subscribed(clientId, credentials, context, tlsContext, subscription) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'unsubTopic', ~topic), Create('unsub', 'dev', ~deviceId), Running(~deviceId, $Server, <'serv', 'dev', <'unsubTopic', ~topic>>), Loop_dev_Connect_Body($Server, ~deviceId, 'unsub', ~session), Start_Dev_6_WaitUnsuback(~deviceId), Src_Dev_Unsub(unsub) ]->[ St_dev_2_1_WaitUnsuback(clientId, credentials, context, newTlsContext,  subscription), Out(unsub) ]
+
+rule serv_send_unsuback:
+    let
+        unsubackMsg = '0'
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        unsubscribeArgs = <~deviceId, topic>
+        subscription = <topic, ~serverQos>
+        context = <$Server, ~session>
+        tlsContext    = ~key
+        newTlsContext = ~key
+        unsub = senc{unsubscribeArgs}~key
+        unsuback = senc{unsubackMsg}~key
+    in
+    [ St_serv_2_Subcribed(clientId, pkDev, subscription, context, tlsContext), In(unsubscribeArgs) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'serv', $Server>, 'unsubTopic', topic), Create('unsub', 'serv', $Server), Running($Server, ~deviceId, <'dev', 'serv', <'unsubTopic', topic>>), Running($Server, ~deviceId, <'dev', 'serv', <'unsuback', unsuback>>), Commit ($Server, ~deviceId, <'serv', 'dev', <'unsubTopic', topic>>),  Start_Serv_5_Unsuback($Server), Loop_serv_Connect_End($Server, ~deviceId, 'unsub'), Loop_serv_Connect_Body($Server, ~deviceId, 'unsub', ~session), In_Serv_Unsub(~deviceId, topic, unsub), Src_Serv_Unsuback(unsuback) ]-> [ St_serv_1_Connected(clientId, pkDev, context, newTlsContext), Out(unsuback) ]
+
+rule dev_recv_unsuback:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context  = <$Server, ~session>
+        unsubackMsg = '0'
+        unsuback = senc{unsubackMsg}~key
+        subscription = <~topic, qos>
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_dev_2_1_WaitUnsuback(clientId, credentials, context, tlsContext, subscription), In(unsuback) ]--[ Start_Dev_7_Unsubscribed(~deviceId), Loop_dev_Connect_End($Server, ~deviceId, 'unsub'), Loop_dev_Connect_Body($Server, ~deviceId, 'unsub', ~session), Secret(<'dev', ~deviceId>, 'unsubTopic', ~topic), Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Commit(~deviceId, $Server, <'dev', 'serv', <'unsubTopic', ~topic>>), Commit(~deviceId, $Server, <'dev', 'serv', <'unsuback', unsuback>>), In_Dev_Unsuback('0', unsuback) ]->[ St_dev_1_Connected(clientId, credentials, context, newTlsContext) ]
+
+rule dev_send_publish:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        newContext = <$Server, ~session>
+        publishArgs = <~deviceId, 'tp', ~payload, ~qos>
+        tlsContext    = ~key
+        newTlsContext = ~key
+        publish = senc{publishArgs}~key
+
+    in
+    [ St_dev_1_Connected(clientId, credentials, context, tlsContext), Fr(~payload), Fr(~qos) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'pubPayload', ~payload), Secret(<'dev', ~deviceId>, 'pubTopic', publishArgs), Create('pub', 'dev', ~deviceId), Running(~deviceId, $Server, <'serv', 'dev', <'pubTopic', publishArgs>>), Loop_dev_Connect_Body($Server, ~deviceId, 'pub', ~session), Loop_dev_ConnectPub_Body_A($Server, ~deviceId, ~session), Src_Dev_Pub(publish) ]->[ St_dev_3_0_WaitPuback(clientId, credentials, newContext, newTlsContext, publishArgs), Out(publish) ]
+
+rule serv_send_puback:
+    let
+        publishArgs = <~deviceId, 'tp', payload, qos>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        pubackMsg = '0'
+        publish = senc{publishArgs}~key
+        puback = senc{pubackMsg}~key
+        context = <$Server, ~session>
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_serv_1_Connected(clientId, pkDev, context, tlsContext), In(publish) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'serv', $Server>, 'pubPayload', payload), Secret(<'serv', $Server>, 'pubTopic', publishArgs), Create('pub', 'serv', $Server), Running($Server, ~deviceId, <'dev', 'serv', <'pubTopic', publishArgs>>), Running($Server, ~deviceId, <'dev', 'serv', <'puback', puback>>), Commit ($Server, ~deviceId, <'serv', 'dev', <'pubTopic', publishArgs>>), In_Serv_Pub(~deviceId, 'tp', payload, qos, publish), Loop_serv_ConnectPub_Loop($Server, ~deviceId, 'pub'), Loop_serv_Connect_Body($Server, ~deviceId, 'pub', ~session), Src_Serv_Puback(puback) ]-> [ St_serv_1_Connected(clientId, pkDev, context, newTlsContext), Out(puback) ]
+
+rule dev_recv_puback:
+    let
+        pkDev = pk(~skDev)
+        credentials = <~keyFmt, ~skDev, pkDev>
+        clientId = <$projectId, $region, $registryId, ~deviceId>
+        context = <$Server, ~session>
+        pubackMsg = '0'
+        publishArgs = <~deviceId, 'tp', ~payload, ~qos>
+        puback = senc{pubackMsg}~key
+        tlsContext    = ~key
+        newTlsContext = ~key
+    in
+    [ St_dev_3_0_WaitPuback(clientId, credentials, context, tlsContext, publishArgs), In(puback) ]--[ Honest(<'dev', ~deviceId>), Honest(<'serv', $Server>), Secret(<'dev', ~deviceId>, 'pubPayload', ~payload), Secret(<'dev', ~deviceId>, 'pubTopic', publishArgs), Commit (~deviceId, $Server, <'dev', 'serv', <'pubTopic', publishArgs>>), Commit (~deviceId, $Server, <'dev', 'serv', <'puback', puback>>), Loop_dev_Connect_End($Server, ~deviceId, 'pub'), Loop_dev_ConnectPub_Body_B($Server, ~deviceId, ~session), In_Dev_Puback('0', puback) ]->[ St_dev_1_Connected(clientId, credentials, context, tlsContext) ]
+
+restriction Equality:
+"  
+   All x y #i. Eq(x, y) @i ==> x = y 
+"
+
+restriction Inequality:
+"
+    All x #i. Neq(x,x) @ #i ==> F
+"
+
+lemma dev_conn_loop_a [reuse, use_induction]:
+"
+    All x y session transition #j. Loop_dev_Connect_Body(x, y, transition, session) @j
+        ==> (Ex #i. Loop_dev_Connect_Enter(x, y, session) @i & i < j)
+"
+
+lemma serv_conn_loop_a [reuse, use_induction]:
+"
+    All x y session transition #j. Loop_serv_Connect_Body(x, y, transition, session) @j
+        ==> (Ex #i. Loop_serv_Connect_Enter(x, y, session) @i & i < j)
+"
+
+lemma secrecy_dev_Secret_Key:
+"
+    All dev msg #i. Secret(<'dev',dev>,'sk',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_dev_ClientID:
+"
+    All dev msg #i. Secret(<'dev',dev>,'devId',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_serv_ClientID:
+"
+    All dev msg #i. Secret(<'serv',dev>,'devId',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_dev_PublishPayload:
+"
+    All dev msg #i. Secret(<'dev',dev>,'pubPayload',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_dev_PublishTopic:
+"
+    All dev msg #i. Secret(<'dev',dev>,'pubTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_serv_PublishPayload:
+"
+    All serv msg #i. Secret(<'serv',serv>,'pubPayload',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_serv_PublishTopic:
+"
+    All serv msg #i. Secret(<'serv',serv>,'pubTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_dev_SubscribeTopic:
+"
+    All dev msg #i. Secret(<'dev',dev>,'subTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_serv_SubscribeTopic:
+"
+    All serv msg #i. Secret(<'serv',serv>,'subTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_dev_UnsubscribeTopic:
+"
+    All dev msg #i. Secret(<'dev',dev>,'unsubTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma secrecy_serv_UnsubscribeTopic:
+"
+    All serv msg #i. Secret(<'serv',serv>,'unsubTopic',msg) @i
+    ==> (not (Ex #j. K(msg)@j))|(Ex X data #j. Reveal(X,data)@j & Honest(X)@i)
+"
+
+lemma aliveness_serv_dev_devId_CONNECT:
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'devId', t>>)@i 
+    ==>  (Ex id #j. Create('con','dev',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_serv_dev_devId_CONNECT:
+"
+    All a b t1 #i. 
+    Commit(a,b,<'serv','dev',<'devId', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'serv','dev',<'devId', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_serv_dev_devId_CONNECT:   
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'devId', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'devId', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_serv_dev_devId_CONNECT:  
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'devId', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'devId', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'serv','dev',<'devId', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_dev_serv_CONNACK:
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'connack', t>>)@i 
+    ==>  (Ex id #j. Create('con','serv',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_dev_serv_CONNACK: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'dev','serv',<'connack', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'dev','serv',<'connack', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_dev_serv_CONNACK:   
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'connack', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'connack', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_dev_serv_CONNACK:  
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'connack', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'connack', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'dev','serv',<'connack', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_serv_dev_DISCONNECT:
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'discon', t>>)@i 
+    ==>  (Ex id #j. Create('discon','dev',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_serv_dev_DISCONNECT: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'serv','dev',<'discon', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'serv','dev',<'discon', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_serv_dev_DISCONNECT:   
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'discon', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'discon', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_serv_dev_DISCONNECT:  
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'discon', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'discon', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'serv','dev',<'discon', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_serv_dev_SUBSCRIBE:
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'subTopic', t>>)@i 
+    ==>  (Ex id #j. Create('sub','dev',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_serv_dev_SUBSCRIBE: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'serv','dev',<'subTopic', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'serv','dev',<'subTopic', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_serv_dev_SUBSCRIBE:   
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'subTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'subTopic', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_serv_dev_SUBSCRIBE:  
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'subTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'subTopic', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'serv','dev',<'subTopic', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_dev_serv_SUBACK:
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'suback', t>>)@i 
+    ==>  (Ex id #j. Create('sub','serv',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_dev_serv_SUBACK: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'dev','serv',<'suback', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'dev','serv',<'suback', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_dev_serv_SUBACK:   
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'suback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'suback', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_dev_serv_SUBACK:  
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'suback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'suback', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'dev','serv',<'suback', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_serv_dev_UNSUBSCRIBE:
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'unsubTopic', t>>)@i 
+    ==>  (Ex id #j. Create('sub','dev',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_serv_dev_UNSUBSCRIBE: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'serv','dev',<'unsubTopic', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'serv','dev',<'unsubTopic', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_serv_dev_UNSUBSCRIBE:   
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'unsubTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'unsubTopic', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_serv_dev_UNSUBSCRIBE:  
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'unsubTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'unsubTopic', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'serv','dev',<'unsubTopic', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_dev_serv_UNSUBACK:
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'unsuback', t>>)@i 
+    ==>  (Ex id #j. Create('sub','serv',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_dev_serv_UNSUBACK: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'dev','serv',<'unsuback', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'dev','serv',<'unsuback', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_dev_serv_UNSUBACK:   
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'unsuback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'unsuback', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_dev_serv_UNSUBACK:  
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'unsuback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'unsuback', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'dev','serv',<'unsuback', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_serv_dev_PUBLISH:
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'pubTopic', t>>)@i 
+    ==>  (Ex id #j. Create('pub','dev',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_serv_dev_PUBLISH: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'serv','dev',<'pubTopic', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'serv','dev',<'pubTopic', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_serv_dev_PUBLISH:   
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'pubTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'pubTopic', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_serv_dev_PUBLISH:  
+"
+    All a b t #i. 
+    Commit(a,b,<'serv','dev',<'pubTopic', t>>) @i
+    ==> (Ex #j. Running(b,a,<'serv','dev',<'pubTopic', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'serv','dev',<'pubTopic', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+
+lemma aliveness_dev_serv_PUBACK:
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'puback', t>>)@i 
+    ==>  (Ex id #j. Create('pub','serv',id) @ j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma weakagreement_dev_serv_PUBACK: 
+"
+    All a b t1 #i. 
+    Commit(a,b,<'dev','serv',<'puback', t1>>) @i
+    ==> (Ex t2 #j. Running(b,a,<'dev','serv',<'puback', t2>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma noninjective_agreement_dev_serv_PUBACK:   
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'puback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'puback', t>>) @j)
+        | (Ex C data #r. Reveal(C,data) @ r & Honest(C) @ i)
+"
+
+lemma injective_agreement_dev_serv_PUBACK:  
+"
+    All a b t #i. 
+    Commit(a,b,<'dev','serv',<'puback', t>>) @i
+    ==> (Ex #j. Running(b,a,<'dev','serv',<'puback', t>>) @j 
+        & j < i
+        & not (Ex a2 b2 #i2. Commit(a2,b2,<'dev','serv',<'puback', t>>) @i2
+            & not (#i2 = #i)))
+        | (Ex C data #r. Reveal(C,data)@r & Honest(C) @i)
+"
+end

@@ -1,0 +1,44 @@
+{
+  "author": "Google Inc.",
+  "version": "0.0.1",
+  "description": "MQTT Example for Google Cloud IoT Core using NodeJS.",
+  "license": "Apache-2.0",
+  "main": "cloudiot_mqtt_example_nodejs.js",
+  "name": "nodejs-docs-samples-iot-mqtt-example",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GoogleCloudPlatform/nodejs-docs-samples.git"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "scripts": {
+    "test": "repo-tools test install --cmd=npm -- run system-test",
+    "system-test": "mocha system-test/*.test.js --timeout=600000",
+    "demo": "node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev1 --privateKeyFile=../rsa_private.pem --algorithm=RS256 --cloudRegion=us-central1 --numMessages=10",
+    "demo_crt": "node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev4 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --cloudRegion=us-central1 --numMessages=10",
+    "def_crt5": "node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev5 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --mqttBridgePort=443",
+    "def_crt5d": "node --inspect --inspect-brk=9229 cloudiot_mqtt_example_nodejs.js mqttDeviceDemo --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev5 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --mqttBridgePort=443",
+    "def_crt5_1": "node cloudiot_mqtt_example_nodejs.js mqttDeviceDemo --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev5 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --mqttBridgeHostname=127.0.0.1 --mqttBridgePort=1080",
+    "tst": "node cloudiot_mqtt_example_nodejs.js mqttDeviceTest --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev5 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --mqttBridgePort=443",
+    "x": "node cloudiot_mqtt_example_nodejs.js x --projectId=optimum-legacy-253101 --registryId=reg --deviceId=dev5 --privateKeyFile=../crt_rsa_private.pem --algorithm=RS256 --mqttBridgePort=443",
+    "m": "node mclient.js"
+  },
+  "dependencies": {
+    "@google-cloud/iot": "^1.0.0",
+    "express": "^4.17.1",
+    "js-yaml": "^3.13.1",
+    "jsonwebtoken": "^8.5.0",
+    "mqtt": "^3.0.0",
+    "node-tcp-proxy": "0.0.14",
+    "node-yaml": "^4.0.1",
+    "yargs": "^14.0.0"
+  },
+  "devDependencies": {
+    "@google-cloud/nodejs-repo-tools": "^3.3.0",
+    "@google-cloud/pubsub": "^0.28.0",
+    "mocha": "^6.0.0",
+    "uuid": "^3.3.2",
+    "global-agent": "^2.1.5"
+  }
+}

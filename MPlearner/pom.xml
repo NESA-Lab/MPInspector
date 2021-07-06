@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>mpinspector</groupId>
+    <artifactId>mplearner</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- LearnLib requires Java 8 -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <!-- Version of LearnLib to use -->
+        <learnlib.version>0.12.0</learnlib.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.learnlib</groupId>
+                <artifactId>learnlib-parent</artifactId>
+                <version>${learnlib.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-basic-eqtests -->
+    
+  
+    <dependencies>
+
+     <!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-core -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-core</artifactId>
+	    <version>0.12.0</version>
+	</dependency>
+     
+     <!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-counterexamples -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-counterexamples</artifactId>
+	    </dependency>
+    	<dependency>
+		<groupId>de.learnlib</groupId>
+		<artifactId>learnlib-lstar-generic</artifactId>
+	</dependency>
+     <dependency>
+		<groupId>de.learnlib</groupId>
+		<artifactId>learnlib-basic-eqtests</artifactId>
+	</dependency>
+
+	<!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-simulator -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-simulator</artifactId>
+	    <version>0.12.0</version>
+	    
+	</dependency>
+	
+	<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.5.12</version>
+</dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpcore -->
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpcore</artifactId>
+    <version>4.4.13</version>
+</dependency>
+	
+	<!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-cache -->
+		<dependency>
+			<groupId>de.learnlib</groupId>
+			<artifactId>learnlib-cache</artifactId>
+			<version>0.12.0</version>
+		</dependency>
+
+	  <dependency>
+  <groupId>org.eclipse.californium</groupId>
+  <artifactId>californium-core</artifactId>
+  <version>2.0.0-M17</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <version>3.5</version>
+</dependency>
+<dependency>
+  <groupId>commons-codec</groupId>
+  <artifactId>commons-codec</artifactId>
+  <version>1.13</version>
+</dependency>
+<dependency>
+  <groupId>com.alibaba</groupId>
+  <artifactId>fastjson</artifactId>
+  <version>1.2.61</version>
+</dependency>
+	
+	
+	<!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-dhc -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-dhc</artifactId>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-ttt -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-ttt</artifactId>
+	 </dependency>
+	 <!-- https://mvnrepository.com/artifact/de.learnlib/learnlib-kearns-vazirani -->
+	<dependency>
+	    <groupId>de.learnlib</groupId>
+	    <artifactId>learnlib-kearns-vazirani</artifactId>
+	 </dependency>
+	 
+<!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.client.mqttv3 -->
+<dependency>
+    <groupId>org.eclipse.paho</groupId>
+    <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+    <version>1.2.2</version>
+</dependency>
+   
+		<dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.47</version>
+        </dependency>
+	<dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.12</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.mobius-software.mqtt/parser -->
+	<dependency>
+	    <groupId>com.mobius-software.mqtt</groupId>
+	    <artifactId>parser</artifactId>
+	    <version>1.0.6</version>
+	</dependency>
+	
+	
+			<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+	<dependency>
+	    <groupId>io.jsonwebtoken</groupId>
+	    <artifactId>jjwt</artifactId>
+	    <version>0.9.1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
+	<dependency>
+	    <groupId>com.googlecode.json-simple</groupId>
+	    <artifactId>json-simple</artifactId>
+	    <version>1.1.1</version>
+	</dependency>
+    </dependencies>
+
+<repositories>
+		<repository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.3</version>
+				<configuration>
+			      <createDependencyReducedPom>false</createDependencyReducedPom>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>mpinspector.mplearner.MPLearner</mainClass>
+								</transformer>
+								
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+
+
+
+	
+</project>
+

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    Command URL: <input id='ipt' style="width: 600px;height:40px; font-size: 20px;"></input>
+    <button id='snd' style="height:40px;width: 80px;">SEND</button>
+    <div>
+        <h4>Cheatsheat</h4>
+        <div id="ct">
+
+        </div>
+    </div>
+
+    <div>
+        <h4>Response</h4>
+        <div id="r">
+
+        </div>
+    </div>
+
+    <script>
+        const addCheat = (what)=>{
+            const d = document.createElement('div');
+            
+            const b = document.createElement('button')
+            b.innerHTML = 'SEND'
+            d.onclick = ()=>{
+                document.getElementById('ipt').value = what;
+                document.getElementById('snd').click()
+            }
+            d.innerHTML = `${what}`
+            d.appendChild(b)
+            document.getElementById('ct').append(
+            d
+            )
+        }
+        [
+            '/mqtt/initClient/?filename=platforms/azure/dev1.yml',
+            '/mqtt/initClient/?filename=platforms/azure/dev2.yml',
+
+
+            '/mqtt/initClient/?filename=platforms/tuya/rc.yml',
+
+            '/mqtt/initClient/?filename=platforms/gcp/dev5.yml',
+			'/mqtt/initClient/?filename=platforms/pahomqttv5/dev1.yml',
+            '/mqtt/initClient/?filename=platforms/mos_v5/dev1.yml',
+
+            '/mqtt/connect',
+            '/mqtt/disconnect',
+            '/mqtt/reset',
+            '/mqtt/publish',
+            '/mqtt/subscribe',
+			'/mqtt/unsubscribe'
+        ].map((x)=>addCheat(x))
+
+        document.getElementById('snd').onclick = async ()=>{
+            const url = document.getElementById('ipt').value
+            const res = await fetch(url)
+            const t = await res.text()
+
+            const d = document.createElement('div')
+            d.style = 'border: 2px solid #333; margin: 10px; padding-left: 10px;'
+            d.innerHTML = `
+                <p>URL: ${url}</p>
+                <p>Response: ${t}</p>
+            `
+            document.getElementById('r').prepend(d)
+        }
+
+    </script>
+</body>
+</html>

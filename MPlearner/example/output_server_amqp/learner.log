@@ -1,0 +1,39 @@
+九月 15, 2020 5:22:21 下午 mpinspector.mplearner.MPLearner <init>
+信息: Using activemqamqp SUL
+九月 15, 2020 5:22:21 下午 mpinspector.mplearner.MPLearner learn
+信息: Using learning algorithm ExtensibleLStarMealy
+九月 15, 2020 5:22:21 下午 mpinspector.mplearner.MPLearner learn
+信息: Using equivalence algorithm MealyModifiedWMethodEQOracle
+九月 15, 2020 5:22:21 下午 mpinspector.mplearner.MPLearner learn
+信息: Start Learning
+九月 15, 2020 5:22:21 下午 de.learnlib.logging.LearnLogger logPhase
+信息: Starting round1
+九月 15, 2020 8:48:47 下午 de.learnlib.logging.LearnLogger logCounterexample
+信息: Counter-example found Query[ε|ATTACH BEGIN SASLINIT TRANSFER / open closed closed closed]
+九月 15, 2020 8:48:47 下午 de.learnlib.logging.LearnLogger logPhase
+信息: Counter example is found
+九月 15, 2020 8:48:47 下午 de.learnlib.logging.LearnLogger logPhase
+信息: Starting round 2
+九月 15, 2020 8:48:47 下午 de.learnlib.logging.LearnLogger logPhase
+信息: start refinehypothesis !
+九月 15, 2020 9:09:55 下午 de.learnlib.logging.LearnLogger logPhase
+信息: hypothesis is refined refineHypothesis(counterExample) ###
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: -------------------------------------------------------
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: Learning [ms]: 9874819, (9874.819 s)
+Searching for counter-example [ms]: 3779623, (3779.623 s)
+Total time [ms]: 13654534, (13654.534 s)
+
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: Round []: 2
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: Membershio queries to SUL [queries]: 1016
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: membership queries to cache [queries]: 1016
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: equivalence queries to SUL [queries]: 1045
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: equivalence queries to cache [queries]: 1045
+九月 15, 2020 9:09:55 下午 mpinspector.mplearner.MPLearner learn
+信息: States in final hypothesis: 10

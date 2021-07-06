@@ -1,0 +1,44 @@
+# server
+platform_name: pahobroker # used for js debug
+protocol: mqtt
+#secureProtocol: TLSv1_2_method
+host: 127.0.0.1
+port: 1883
+
+# not neccessary, default is Mqtt3.1.1 (4)
+mqttVersion: 5
+
+# Connect 
+username: empty
+clientId: dev1Mqttv5
+password:
+  method: fixed
+  data: empty
+properties: 
+  userProperties: {a: 2, b: 3}
+
+# subscribe 
+sub_defaults:
+  qos: 1
+  topic: TopicB
+  properties:
+    userProperties: {a: 2, b: 3}
+    
+
+# publish 
+pub_defaults:
+  qos: 1
+  topic: TopicA
+  payload:
+    method: fixed
+    data: 'Hello test mqttv5'
+  properties:
+    responseTopic: TopicA
+    correlationData: Buffer.from('This is the auth data,,,')
+    userProperties: {a: 2, b: 3}
+  
+
+unsub_defaults:
+  topic: TopicB
+  properties: 
+    userProperties: {a: 2, b: 3}

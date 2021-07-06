@@ -1,0 +1,33 @@
+# server
+platform_name: gcp_dev5 # used for js debug
+protocol: mqtts
+secureProtocol: TLSv1_2_method
+host: mqtt.googleapis.com
+port: 8883
+
+# not neccessary, default is Mqtt3.1.1 (4)
+mqttVersion: 4
+
+# Connect 
+username: unused
+clientId: tmp
+password:
+  # fixed: password 
+  method: jwt
+  token:
+    aud: tmp
+  privateKeyFile: ./rsa_private_3.pem
+  algorithm: RS256
+
+# subscribe 
+sub_defaults:
+  qos: 1
+  topic: /devices/dev5/config
+
+# publish
+pub_defaults:
+  qos: 1
+  topic: /devices/dev5/state
+  payload:
+    method: fixed
+    data: '{"msg": "this is a payload"}'

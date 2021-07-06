@@ -1,0 +1,31 @@
+# server information
+platform_name: azure # used for js debug
+protocol: mqtts
+secureProtocol: TLSv1_2_method
+host: NesaIot-1.azure-devices.net
+port: 8883
+
+# not neccessry, default is Mqtt3.1.1 (4)
+mqttVersion: 4
+
+# Connect field
+username: NesaIot-1.azure-devices.net/dev1/?api-version=2019-03-30&DeviceClientType=azure-iot-deviceXXXXXXX
+clientId: dev1
+password:
+  # fixed: password 
+  method: fixed
+  data: SharedAccessSignature sr=NesaIot-1.azure-devices.net%2Fdevices%2Fdev1&sig=XXX%3D&se=XXXX
+
+# subscribe default
+sub_defaults:
+  qos: 1
+  topic: devices/dev1/messages/devicebound/#
+
+# publish default
+pub_defaults:
+  qos: 1
+  topic: devices/dev1/messages/events/temperatureAlert=false
+  payload:
+    # if is tuya, extra processing
+    method: fixed
+    data: '{"msg": "this is a payload"}'

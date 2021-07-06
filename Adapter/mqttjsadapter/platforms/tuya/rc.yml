@@ -1,0 +1,30 @@
+# server
+platform_name: tuya # used for js debug
+protocol: mqtt
+host: mq.gw.tuyacn.com
+port: 1883
+
+# not nessasry, default is Mqtt3.1.1 (4)
+mqttVersion: 4
+
+# Connect
+username: 002009XXXXXXXXXXXXXd
+clientId: 002009XXXXXXXXXXXXXd
+password:
+  # fixed: password 
+  method: fixed
+  data: 25216fXXXXX0
+
+# subscribe 
+sub_defaults:
+  qos: 1
+  topic: smart/device/in/002009XXXXXXXXXXXXXd
+
+# publish 
+pub_defaults:
+  qos: 1
+  topic: smart/device/out/002009XXXXXXXXXXXXXd
+  payload:
+    method: fixed
+    data: 'Not implmented'
+    localKey: 03XXXXXXXXXXXXX6d
