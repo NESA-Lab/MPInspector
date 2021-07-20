@@ -1,0 +1,1 @@
+{SUBSCRIBE->topics=[qos, V0], UNSUBSCRIBE->topics=[V0], CONNECT->username=[V1, V2], PUBLISH->topic=[qos, V3]}

@@ -1,0 +1,1 @@
+{CONNACK=[], SUBACK=[qos, getPacketID()], UNSUBSCRIBE=[topics(V6,V7,V8), getPacketID()], CONNECT=[password(JWT(token(aud, exp, iat), tokenKey, RS256)), clientID(V0,aud,V2,V3,V4,V5,V6,V7)], UNSUBACK=[getPacketID()], PUBLISH=[payload, topic(qos,V6,V7,V8)], PUBACK=[getPacketID()], SUBSCRIBE=[topics(qos,V6,V7,V8), getPacketID()]}

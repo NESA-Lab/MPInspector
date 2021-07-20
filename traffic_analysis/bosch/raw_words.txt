@@ -1,0 +1,1 @@
+{bosch20190924=V1, command/+/+/req/#=V0, AT_MOST_ONCE=qos, telemetry=V3, td1b34cf6c40f46ecbf03778d6820cf83=V2}

@@ -1,0 +1,1 @@
+{CONNECT->clientID=[V0, aud, V2, V3, V4, V5, V6, V7], SUBSCRIBE->topics=[qos, V6, V7, V8], UNSUBSCRIBE->topics=[V6, V7, V8], CONNECT->password=[JWT(token(aud, exp, iat), tokenKey, RS256)], PUBLISH->topic=[qos, V6, V7, V8]}

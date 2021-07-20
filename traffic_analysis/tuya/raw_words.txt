@@ -1,0 +1,1 @@
+{AT_MOST_ONCE=qos, in=V2, AT_LEAST_ONCE=qos, device=V1, smart=V0, 0020095060019448e42d=V3, out=V4}

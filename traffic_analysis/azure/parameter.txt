@@ -1,0 +1,1 @@
+{CONNACK=[], SUBACK=[qos, getPacketID()], UNSUBSCRIBE=[topics(V0,V1,V2,V3,V4), getPacketID()], CONNECT=[password(sas(sr,sig,se)), clientID, username(api-version,DeviceClientType,resourceurl)], UNSUBACK=[getPacketID()], PUBLISH=[topic(qos,V0,V1,V2,V5,V6)], PUBACK=[getPacketID()], SUBSCRIBE=[topics(qos,V0,V1,V2,V3,V4), getPacketID()]}
