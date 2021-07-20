@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,16 +47,18 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("gcp");
+		semantic.setPlatformtype("tuya");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
-		String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
+		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
+		String path_filedir = "../traffic_logs/"+semantic.platformtype+"/";
+		String output_dir = "../traffic_analysis/"+semantic.platformtype+"/";
 		//load the txt file of a platform
-		String text_filedir = "mediaresultFile\\automation customized crypto function\\"+semantic.platformtype+".txt";
+		//String text_filedir = "mediaresultFile\\automation customized crypto function\\"+semantic.platformtype+".txt";
 		//String text_filedir = "iot prtocol project\\automation customized crypto function\\"+semantic.platformtype+".txt";
 		//load coap file
 		//String code_filedir = "iot prtocol project\\automation customized crypto function\\"+semantic.platformtype+".java";
-		String code_filedir = "mediaresultFile\\"+semantic.platformtype+".java";
+		//String code_filedir = "mediaresultFile\\"+semantic.platformtype+".java";
     	
 		//handle the state machine
 		StateMachineRefine refinedot = null;
@@ -871,13 +874,18 @@ public class MQTTSemantics {
         System.out.println("the final packets_abterms in a log is *********************\n"+ packets_abterms);
         
         
-        
         /******************
          * Store the "packets_abterms" result into txt
          *******************/
-        writeMapListintoFile(packets_abterms, "mediaresultFile\\trafficanalysis\\"+semantic.platformtype+"parameter.txt");
-        writeMapListintoFile(abwords_map, "mediaresultFile\\trafficanalysis\\"+semantic.platformtype+"abwords_map.txt");
-        writeMapStringintoFile(raw_words, "mediaresultFile\\trafficanalysis\\"+semantic.platformtype+"raw_words.txt");
+        
+        writeMapListintoFile(packets_abterms, output_dir,"parameter.txt");
+        writeMapListintoFile(abwords_map, output_dir,"abwords_map.txt");
+        writeMapStringintoFile(raw_words, output_dir,"raw_words.txt");
+        
+        /******************
+         * Combine the parameter and raw_words
+         *******************/
+        writeFinalResult(packets_abterms,abwords_map,raw_words,output_dir,"result.json",semantic.platformtype);
 //        writeMapListintoFile(packets_abterms, "iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"parameter.txt");
 //        writeMapListintoFile(abwords_map, "projects\\iot prtocol project\\trafficanalysis\"+semantic.platformtype+"abwords_map.txt");
 //        writeMapStringintoFile(raw_words, "projects\\iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"raw_words.txt");
@@ -1514,17 +1522,18 @@ public class MQTTSemantics {
 	
 	
 
-	public static void writeMapListintoFile(Map<String, List<String>> map_list, String savefilepath) {
+	public static void writeMapListintoFile(Map<String, List<String>> map_list,  String filepath,String filename) {
 		/******************
          * Store the result into txt
          *******************/
         try {
 	    	
-			File file1 = new File(savefilepath);
-			if (!file1.exists()) {
-		        System.out.println("File is not exist");
-		        file1.createNewFile();
-		    }
+        	File savefilepath = new File(filepath);
+        	if (!savefilepath.exists()){
+        		savefilepath.mkdir();
+                System.out.println("Create dir: "+ savefilepath);
+        	}
+			File file1 = new File(filepath,filename);
 			FileWriter fileWritter = new FileWriter(file1,false);
 			fileWritter.write(map_list.toString());
 			fileWritter.close();
@@ -1536,15 +1545,19 @@ public class MQTTSemantics {
 		}
 	}
 	
-	public static void writeMapStringintoFile(Map<String, String> map_string, String savefilepath) {
+	public static void writeMapStringintoFile(Map<String, String> map_string, String filepath,String filename) {
 		/******************
          * Store the result into txt
          *******************/
         try {
-	    	
-			File file1 = new File(savefilepath);
+        	File savefilepath = new File(filepath);
+        	if (!savefilepath.exists()){
+        		savefilepath.mkdir();
+                System.out.println("Create dir: "+ savefilepath);
+        	}
+			File file1 = new File(filepath,filename);
 			if (!file1.exists()) {
-		        System.out.println("File is not exist");
+		        System.out.println("File does not exist");
 		        file1.createNewFile();
 		    }
 			FileWriter fileWritter = new FileWriter(file1,false);
@@ -1557,6 +1570,78 @@ public class MQTTSemantics {
 			e.printStackTrace();
 		}
 	}
+	
+	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,String filepath,String filename,String platformtype) {
+		/******************
+	     * Combine the parameter and raw_words
+	     *******************/
+		JSONObject finalResult = new JSONObject();
+		finalResult.put("platform", platformtype);
+		for(String key:parameters.keySet()) {
+			List<String> values = parameters.get(key);
+			List<JSONObject> msgObj = new ArrayList<>();
+			for(String value:values) {
+				if(Pattern.matches("(.)+\\((.)+\\)(.)*",value)) {
+					JSONObject termObj= new JSONObject();
+					List<JSONObject> termList = new ArrayList<JSONObject>();
+					String termKey = value.split("\\((.)+\\)")[0];
+					List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
+					for(String termKeyValue:termKeyValues) {
+						JSONObject termKeyValueObj = new JSONObject();
+						if(raw_words.containsValue(termKeyValue)) {
+							List<String> tmp = new ArrayList<String>();
+							for (String k : raw_words.keySet()) {
+								if (raw_words.get(k).equals(termKeyValue)) {
+									tmp.add(k);
+								}
+							}
+							termKeyValueObj.put(termKeyValue,tmp);
+						}else {
+							termKeyValueObj.put(termKeyValue,new ArrayList<String>());
+						}
+						termList.add(termKeyValueObj);
+					}
+					termObj.put(termKey,termList);
+					msgObj.add(termObj);
+				}else {
+					JSONObject termObj= new JSONObject();
+					List<String> termList = new ArrayList<String>();
+					if(raw_words.containsValue(value)) {
+						for (String k : raw_words.keySet()) {
+							if (raw_words.get(k).equals(value)) {
+								termList.add(k);
+							}
+						}
+					}
+					termObj.put(value,termList);
+					msgObj.add(termObj);
+				}
+			}
+			finalResult.put(key,msgObj);
+		}
+		try {
+        	File savefilepath = new File(filepath);
+        	if (!savefilepath.exists()){
+        		savefilepath.mkdir();
+                System.out.println("Create dir: "+ savefilepath);
+        	}
+			File file1 = new File(filepath,filename);
+			if (!file1.exists()) {
+		        System.out.println("File does not exist");
+		        file1.createNewFile();
+		    }
+			FileWriter fileWritter = new FileWriter(file1,false);
+			fileWritter.write(finalResult.toString());
+			
+			fileWritter.close();
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
     
 }
 
