@@ -1,1 +1,1 @@
-{SUBSCRIBE->topics=[qos, V0, V1, V2, V3], UNSUBSCRIBE->topics=[V0, V1, V2, V3], PUBLISH->payload=[senc(content,clientID,timestamp)skDev,md5(senc(content,clientID,timestamp)skDev, skDev)], PUBLISH->topic=[qos, V0, V1, V4, V3]}
+{SUBSCRIBE->topics=[qos, V0, V1, V2, V3], UNSUBSCRIBE->topics=[V0, V1, V2, V3], PUBLISH->payload=[senc(content,clientID,timestamp)skDev, md5(senc(content,clientID,timestamp)skDev)skDev], PUBLISH->topic=[qos, V0, V1, V4, V3]}

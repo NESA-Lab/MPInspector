@@ -36,7 +36,7 @@ public class MQTTSemantics {
 	 * handle MQTT packet in binary file
 	 * output: an semantics map
 	 ******************/
-	static String platformtype = "gcp";
+	static String platformtype = "bosch";
 	
 	public void setPlatformtype(String platformtype) {
 		this.platformtype = platformtype;
@@ -47,7 +47,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("tuya");
+		semantic.setPlatformtype("alitcp");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -95,7 +95,7 @@ public class MQTTSemantics {
     	packets_terms.add(puback_map);
     	
     	Map<String, List<String>> packets_abterms = new HashMap<String, List<String>>();
-    	
+    	Map<String, JSONObject> encrypt_terms = new HashMap<>(); 
     	List<String> packet_names = new ArrayList<String>();
     	packet_names.add("CONNECT");
     	packet_names.add("CONNACK");
@@ -643,7 +643,7 @@ public class MQTTSemantics {
 			//input is  key_tmp is a parameter from a message, value is the value of the parameter
 			// abwords_map parameter and semantics
 			// raw_words value to semantics 
-			if(getCryLibQuery(key_tmp, value_tmp.get(0), abwords_map, raw_words) != 0) {
+			if(getCryLibQuery(key_tmp, value_tmp.get(0), abwords_map, raw_words,encrypt_terms) != 0) {
 				System.out.println("function matched!");
 			}else {
 				// topic special process
@@ -885,7 +885,7 @@ public class MQTTSemantics {
         /******************
          * Combine the parameter and raw_words
          *******************/
-        writeFinalResult(packets_abterms,abwords_map,raw_words,output_dir,"result.json",semantic.platformtype);
+        writeFinalResult(packets_abterms,abwords_map,raw_words,encrypt_terms,output_dir,"result.json",semantic.platformtype);
 //        writeMapListintoFile(packets_abterms, "iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"parameter.txt");
 //        writeMapListintoFile(abwords_map, "projects\\iot prtocol project\\trafficanalysis\"+semantic.platformtype+"abwords_map.txt");
 //        writeMapStringintoFile(raw_words, "projects\\iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"raw_words.txt");
@@ -1043,7 +1043,7 @@ public class MQTTSemantics {
 	 * exp:    	 
 	 * result: (jwt(iat, exp, aud), tokenkey, alg)
 	*/
-	private static int getCryLibQuery(String key, String value, Map<String, List<String>> abwords_map, Map<String,String> raw_words) {
+	private static int getCryLibQuery(String key, String value, Map<String, List<String>> abwords_map, Map<String,String> raw_words,Map<String,JSONObject> encrypt_terms) {
 		// TODO Auto-generated method stub
 		
 		//JWT match
@@ -1067,11 +1067,15 @@ public class MQTTSemantics {
 			List<String> func = new ArrayList<String>();
 			func.add("h(skpwd)");
 			abwords_map.put(key, func); //password, h(secret key)
+			
 			return 1;
 		}else if(platformtype.contains("tuya") && key.contains("payload")){
 			List<String> func = new ArrayList<String>();
-			func.add("senc(content,clientID,timestamp)skDev,md5(senc(content,clientID,timestamp)skDev, skDev)");
+			func.add("senc(content,clientID,timestamp)skDev");
+			func.add("md5(senc(content,clientID,timestamp)skDev)skDev");
 			abwords_map.put(key, func); //password, h(secret key)
+			
+			
 			return 1;
 		}else if(platformtype.contains("ali") && key.contains("password")){
 			List<String> func = new ArrayList<String>();
@@ -1131,6 +1135,11 @@ public class MQTTSemantics {
 			            //finish refine
 			            raw_words.put(tmp_value,tmp_key);
 			        }
+			        JSONObject encryptTermObj = new JSONObject();
+		        	encryptTermObj.putAll(headerjson);
+		        	encryptTermObj.putAll(payloadJson);
+					encrypt_terms.put("gcp->password", encryptTermObj);
+			        	
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -1570,8 +1579,48 @@ public class MQTTSemantics {
 			e.printStackTrace();
 		}
 	}
-	
-	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,String filepath,String filename,String platformtype) {
+	private static boolean isEncryptionFunction(String str) {
+		if(str.contains("hmac(")||str.contains("senc(")||str.contains("JWT(")||str.contains("md5(")||str.contains("sas(")) return true;
+		return false;
+	}
+	private static List<JSONObject> parseEncryptionTerm(Map<String, String> raw_words,String str) {
+		String[] splitRes = str.split("\\((.)+\\)");
+		JSONObject termObj= new JSONObject();
+		String term = splitRes[0];
+		String termKey = splitRes.length>=2?splitRes[1]:null;
+		List<JSONObject> ans = new ArrayList<>();
+		if(term.length()==str.length()) {
+			String[] termVals = term.split(",");
+			for(String termVal:termVals) {
+				JSONObject termKeyValueObj = new JSONObject();
+				if(raw_words.containsValue(termVal)) {
+					List<String> tmp = new ArrayList<String>();
+					for (String k : raw_words.keySet()) {
+						if (raw_words.get(k).equals(termVal)) {
+							tmp.add(k);
+						}
+					}
+					termKeyValueObj.put(termVal,tmp);
+				}else {
+					termKeyValueObj.put(termVal,new ArrayList<String>());
+				}
+				ans.add(termKeyValueObj);
+			}
+		}else {
+			String termVal = str.substring(term.length()+1, termKey==null?str.length()-1:str.length()-termKey.length()-1);
+			if(isEncryptionFunction(term+"(")) {
+				termObj.put("method", term);
+				termObj.put("encry_term", parseEncryptionTerm(raw_words,termVal));
+				if(termKey!=null) termObj.put("encry_key", termKey);
+			}else {			
+				List<JSONObject> termVals = parseEncryptionTerm(raw_words,termVal);
+				termObj.put(term, termVals.size()==1?termVals.get(0):termVals);
+			}
+			ans.add(termObj);
+		}
+		return ans;
+	}
+	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,Map<String,JSONObject> encrypt_terms,String filepath,String filename,String platformtype) {
 		/******************
 	     * Combine the parameter and raw_words
 	     *******************/
@@ -1583,26 +1632,44 @@ public class MQTTSemantics {
 			for(String value:values) {
 				if(Pattern.matches("(.)+\\((.)+\\)(.)*",value)) {
 					JSONObject termObj= new JSONObject();
-					List<JSONObject> termList = new ArrayList<JSONObject>();
-					String termKey = value.split("\\((.)+\\)")[0];
-					List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
-					for(String termKeyValue:termKeyValues) {
-						JSONObject termKeyValueObj = new JSONObject();
-						if(raw_words.containsValue(termKeyValue)) {
-							List<String> tmp = new ArrayList<String>();
-							for (String k : raw_words.keySet()) {
-								if (raw_words.get(k).equals(termKeyValue)) {
-									tmp.add(k);
+					if(!isEncryptionFunction(value)) {
+						List<JSONObject> termList = new ArrayList<JSONObject>();
+						String termKey = value.split("\\((.)+\\)")[0];
+						List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
+						for(String termKeyValue:termKeyValues) {
+							JSONObject termKeyValueObj = new JSONObject();
+							if(raw_words.containsValue(termKeyValue)) {
+								List<String> tmp = new ArrayList<String>();
+								for (String k : raw_words.keySet()) {
+									if (raw_words.get(k).equals(termKeyValue)) {
+										tmp.add(k);
+									}
 								}
+								termKeyValueObj.put(termKeyValue,tmp);
+							}else {
+								termKeyValueObj.put(termKeyValue,new ArrayList<String>());
 							}
-							termKeyValueObj.put(termKeyValue,tmp);
-						}else {
-							termKeyValueObj.put(termKeyValue,new ArrayList<String>());
+							termList.add(termKeyValueObj);
 						}
-						termList.add(termKeyValueObj);
+						termObj.put(termKey,termList);
+						msgObj.add(termObj);
+					}else {
+						String termKey = value.split("\\((.)+\\)")[0];
+						if((platformtype+"->"+termKey).contentEquals("gcp->password")) {
+							termObj.put("password", encrypt_terms.get("gcp->password"));
+						}else {
+							List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
+							List<JSONObject> termKeyValuesObj = new ArrayList<>();
+							for(String termKeyValue:termKeyValues) {
+								termKeyValuesObj.add(parseEncryptionTerm(raw_words,termKeyValue).get(0));
+							}
+							termObj.put(termKey, termKeyValuesObj);
+						}
+						
+						msgObj.add(termObj);
 					}
-					termObj.put(termKey,termList);
-					msgObj.add(termObj);
+					
+					
 				}else {
 					JSONObject termObj= new JSONObject();
 					List<String> termList = new ArrayList<String>();
