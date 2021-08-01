@@ -47,7 +47,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("alitcp");
+		semantic.setPlatformtype("gcp");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -885,7 +885,7 @@ public class MQTTSemantics {
         /******************
          * Combine the parameter and raw_words
          *******************/
-        writeFinalResult(packets_abterms,abwords_map,raw_words,encrypt_terms,output_dir,"result.json",semantic.platformtype);
+        writeFinalResult(packets_abterms,abwords_map,raw_words,encrypt_terms,terms_map_in_a_log,output_dir,"result.json",semantic.platformtype);
 //        writeMapListintoFile(packets_abterms, "iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"parameter.txt");
 //        writeMapListintoFile(abwords_map, "projects\\iot prtocol project\\trafficanalysis\"+semantic.platformtype+"abwords_map.txt");
 //        writeMapStringintoFile(raw_words, "projects\\iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"raw_words.txt");
@@ -1583,7 +1583,7 @@ public class MQTTSemantics {
 		if(str.contains("hmac(")||str.contains("senc(")||str.contains("JWT(")||str.contains("md5(")||str.contains("sas(")) return true;
 		return false;
 	}
-	private static List<JSONObject> parseEncryptionTerm(Map<String, String> raw_words,String str) {
+	private static List<JSONObject> parseEncryptionTerm(Map<String, String> raw_words,String str,String platformtype) {
 		String[] splitRes = str.split("\\((.)+\\)");
 		JSONObject termObj= new JSONObject();
 		String term = splitRes[0];
@@ -1609,18 +1609,20 @@ public class MQTTSemantics {
 		}else {
 			String termVal = str.substring(term.length()+1, termKey==null?str.length()-1:str.length()-termKey.length()-1);
 			if(isEncryptionFunction(term+"(")) {
-				termObj.put("method", term);
-				termObj.put("encry_term", parseEncryptionTerm(raw_words,termVal));
+				if(platformtype.contains("ali")&&term.contentEquals("hmac")) termObj.put("method", "hmacsha1");
+				else termObj.put("method", term);
+				
+				termObj.put("encry_term", parseEncryptionTerm(raw_words,termVal,platformtype));
 				if(termKey!=null) termObj.put("encry_key", termKey);
 			}else {			
-				List<JSONObject> termVals = parseEncryptionTerm(raw_words,termVal);
+				List<JSONObject> termVals = parseEncryptionTerm(raw_words,termVal,platformtype);
 				termObj.put(term, termVals.size()==1?termVals.get(0):termVals);
 			}
 			ans.add(termObj);
 		}
 		return ans;
 	}
-	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,Map<String,JSONObject> encrypt_terms,String filepath,String filename,String platformtype) {
+	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,Map<String,JSONObject> encrypt_terms,Map<String,List<String>> terms_map_in_a_log,String filepath,String filename,String platformtype) {
 		/******************
 	     * Combine the parameter and raw_words
 	     *******************/
@@ -1635,21 +1637,45 @@ public class MQTTSemantics {
 					if(!isEncryptionFunction(value)) {
 						List<JSONObject> termList = new ArrayList<JSONObject>();
 						String termKey = value.split("\\((.)+\\)")[0];
-						List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
-						for(String termKeyValue:termKeyValues) {
-							JSONObject termKeyValueObj = new JSONObject();
-							if(raw_words.containsValue(termKeyValue)) {
-								List<String> tmp = new ArrayList<String>();
-								for (String k : raw_words.keySet()) {
-									if (raw_words.get(k).equals(termKeyValue)) {
-										tmp.add(k);
+						if(platformtype.contentEquals("azure")&&termKey.contentEquals("username")) {
+							String username = terms_map_in_a_log.get("CONNECT->username").get(0);
+							JSONObject methodObj = new JSONObject();
+							methodObj.put("method", "urlencode");
+							termList.add(methodObj);
+							String url = username.substring(0,username.indexOf("?"));
+							JSONObject urlObj = new JSONObject();
+							urlObj.put("url", url);
+							termList.add(urlObj);
+							JSONObject paramObj = new JSONObject();
+							List<JSONObject> paramList = new ArrayList<>();
+							String api_version = username.substring(username.indexOf("?")+1,username.indexOf("&"));
+							JSONObject apiObj = new JSONObject();
+							apiObj.put("api-version", api_version.substring(api_version.indexOf("=")+1));
+							paramList.add(apiObj);
+							String dtype = username.substring(username.indexOf("&")+1);
+							JSONObject dtypeObj = new JSONObject();
+							dtypeObj.put("DeviceClientType", dtype.substring(dtype.indexOf("=")+1));
+							paramList.add(dtypeObj);
+							paramObj.put("params", paramList);
+							termList.add(paramObj);
+  						}else {
+							List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
+							for(String termKeyValue:termKeyValues) {
+								JSONObject termKeyValueObj = new JSONObject();
+								if(raw_words.containsValue(termKeyValue)) {
+									List<String> tmp = new ArrayList<String>();
+									for (String k : raw_words.keySet()) {
+										if (raw_words.get(k).equals(termKeyValue)) {
+											tmp.add(k);
+										}
 									}
+									termKeyValueObj.put(termKeyValue,tmp);
+								}else {
+									termKeyValueObj.put(termKeyValue,new ArrayList<String>());
 								}
-								termKeyValueObj.put(termKeyValue,tmp);
-							}else {
-								termKeyValueObj.put(termKeyValue,new ArrayList<String>());
+								termList.add(termKeyValueObj);
 							}
-							termList.add(termKeyValueObj);
+							
 						}
 						termObj.put(termKey,termList);
 						msgObj.add(termObj);
@@ -1661,7 +1687,7 @@ public class MQTTSemantics {
 							List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
 							List<JSONObject> termKeyValuesObj = new ArrayList<>();
 							for(String termKeyValue:termKeyValues) {
-								termKeyValuesObj.add(parseEncryptionTerm(raw_words,termKeyValue).get(0));
+								termKeyValuesObj.add(parseEncryptionTerm(raw_words,termKeyValue,platformtype).get(0));
 							}
 							termObj.put(termKey, termKeyValuesObj);
 						}
