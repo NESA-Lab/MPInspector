@@ -1,1 +1,1 @@
-{SUBSCRIBE->topics=[qos, V0, V1, V2, V3, V4], UNSUBSCRIBE->topics=[V0, V1, V2, V3, V4], CONNECT->password=[sas(sr,sig,se)], CONNECT->username=[api-version,DeviceClientType,resourceurl], PUBLISH->topic=[qos, V0, V1, V2, V5, V6]}
+{SUBSCRIBE->topics=[qos, V0, clientID, V1, V2, V3], UNSUBSCRIBE->topics=[V0, clientID, V1, V2, V3], CONNECT->password=[sas(sr,sig,se)], CONNECT->username=[api-version,DeviceClientType,resourceurl], PUBLISH->topic=[qos, V0, clientID, V1, V4, V5]}

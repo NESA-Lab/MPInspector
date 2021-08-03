@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +48,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("alitcp");
+		semantic.setPlatformtype("bosch");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -154,11 +155,15 @@ public class MQTTSemantics {
 			case "CONNECT":
 				if(con_map.containsKey("username")) {
 					List<String> con_list = con_map.get("username");
+					if(platformtype.contains("tuya")) {
+						raw_words.put(con_list.get(0), "username");
+					}
 					if(con_list.contains(((Connect) decoded).getUsername())) {
 						
 					}else {
 						con_list.add(((Connect) decoded).getUsername());
 						con_map.put("username",con_list);
+						
 					}
 				}else {
 					//new MQTTSemantic().getTermsMap(terms_raw, con_map);
@@ -169,11 +174,18 @@ public class MQTTSemantics {
 				if(con_map.containsKey("password")) {
 					// System.out.println("password con_list:" + con_list);
 					List<String> con_list = con_map.get("password");
+					
 					if(con_list.contains(((Connect) decoded).getPassword())) {
-						
+						//bosch refind
+				        if(platformtype.contains("bosch")) {
+				        	raw_words.put(con_list.get(0),"password");
+				        }
 					}else {
 						con_list.add(((Connect) decoded).getPassword());
 						con_map.put("password",con_list);
+						if(platformtype.contains("tuya")) {
+				        	raw_words.put(con_list.get(0),"password");
+				        }
 					}
 				}else {
 					List<String> con_list = new ArrayList<String>();
@@ -182,8 +194,12 @@ public class MQTTSemantics {
 				}
 				if(con_map.containsKey("clientID")) {
 					List<String> con_list = con_map.get("clientID");
+					
 					if(con_list.contains(((Connect) decoded).getClientID())) {
-						
+						//clientId refine
+				        if(platformtype.contains("azure")||platformtype.contains("aws")||platformtype.contains("bosch")||platformtype.contains("tuya")) {
+				        	raw_words.put(con_list.get(0),"clientID");
+				        }
 					}else {
 						con_list.add(((Connect) decoded).getClientID());
 						con_map.put("clientID",con_list);
@@ -216,7 +232,11 @@ public class MQTTSemantics {
 					}else {
 						con_list.add(String.valueOf(protocollevel));
 						con_map.put("protocolLevel",con_list);
+						for(String level:con_list) {
+							raw_words.put(level, "protocolLevel");
+						}
 					}
+					
 				}else {
 					List<String> con_list = new ArrayList<String>();
 					int protocollevel = ((Connect) decoded).getProtocolLevel();
@@ -342,7 +362,10 @@ public class MQTTSemantics {
 					ByteBuf content = ((Publish) decoded).getContent();
 					String content_str = convertByteBufToString(content);
 					if(con_list.contains(content_str)) {
-						
+						if(!platformtype.contains("tuya")) {
+							raw_words.put("{\"msg1\":\"hello\"}", "payload");
+						}
+						raw_words.put("{\"msg2\":\"hello\"}", "content");
 					}else {
 						con_list.add(content_str);
 						pub_map.put("payload",con_list);
@@ -363,11 +386,14 @@ public class MQTTSemantics {
 						retain = "false";
 					}
 					if(con_list.contains(retain)) {
-						
+						if(platformtype.contains("bosch")) {
+							raw_words.put(retain, "retain");
+						}
 					}else {
 						con_list.add(String.valueOf(retain));
 						pub_map.put("retain",con_list);
 					}
+					
 				}else {
 					List<String> con_list = new ArrayList<String>();
 					String retain = null;
@@ -828,6 +854,11 @@ public class MQTTSemantics {
         	}
     
         }
+        //tuya timestamp refine 
+        if(platformtype.contains("tuya")) {
+        	raw_words.put(new Integer((int) new Date().getTime()/1000).toString(),"timestamp");
+		}
+        
 		
 		System.out.println("raw_words is ****\n"+raw_words.toString());
 		//System.out.println("the terms map in a log is \n"+ terms_map_in_a_log);
@@ -1722,6 +1753,15 @@ public class MQTTSemantics {
 							}
 						}
 					}
+					//tuya refine
+					if(platformtype.contains("tuya")&&value.contentEquals("username")) {
+						for (String k : raw_words.keySet()) {
+							if (raw_words.get(k).equals("clientID")) {
+								termList.add(k);
+							}
+						}
+					}
+					
 					termObj.put(value,termList);
 					msgObj.add(termObj);
 				}

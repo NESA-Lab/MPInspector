@@ -1,1 +1,1 @@
-{bosch20190924=V1, command/+/+/req/#=V0, AT_MOST_ONCE=qos, telemetry=V3, td1b34cf6c40f46ecbf03778d6820cf83=V2}
+{bosch20190924=V1, {"msg2":"hello"}=content, command/+/+/req/#=V0, AT_MOST_ONCE=qos, Kan1999...=password, false=retain, true=retain, b7a54e7403004d80b21f18df5fa4007e=clientID, telemetry=V3, td1b34cf6c40f46ecbf03778d6820cf83=V2, {"msg1":"hello"}=payload}

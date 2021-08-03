@@ -1,1 +1,1 @@
-{AT_MOST_ONCE=qos, a1EQiFSQ6Js=productKey, update=V10, mpinspector=deviceId, sys=V2, Unit02=deviceName, securemode=3,signmethod=hmacsha1=V1, post_reply=V8, AT_LEAST_ONCE=qos, property=V7, event=V6, thing=V5, user=V9, 12346=V0}
+{{"msg2":"hello"}=content, AT_MOST_ONCE=qos, a1EQiFSQ6Js=productKey, update=V10, mpinspector=deviceId, sys=V2, Unit02=deviceName, {"msg1":"hello"}=payload, securemode=3,signmethod=hmacsha1=V1, post_reply=V8, AT_LEAST_ONCE=qos, property=V7, event=V6, thing=V5, user=V9, 12346=V0}

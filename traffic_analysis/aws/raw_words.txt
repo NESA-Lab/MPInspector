@@ -1,1 +1,1 @@
-{AT_MOST_ONCE=qos, hello=V0}
+{{"msg2":"hello"}=content, AT_MOST_ONCE=qos, hello=V0, {"msg1":"hello"}=payload, 4c354273ca9e4104b2cd2e51b6fe7977=clientID}
