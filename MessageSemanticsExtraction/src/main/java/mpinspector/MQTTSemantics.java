@@ -47,7 +47,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("gcp");
+		semantic.setPlatformtype("alitcp");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -811,6 +811,22 @@ public class MQTTSemantics {
         	}
         	
         	System.out.println("abwords_map of ali is ****\n"+abwords_map.toString());
+        	raw_words.put("mpinspector","deviceId");
+        	for(String key:raw_words.keySet()) {
+        		if(raw_words.get(key).contentEquals("V4")) {
+        			raw_words.put(key,"deviceName");
+        			break;
+        		}
+        		
+        	}
+        	for(String key:raw_words.keySet()) {
+        		if(raw_words.get(key).contentEquals("V3")) {
+        			raw_words.put(key,"productKey");
+        			break;
+        		}
+        		
+        	}
+    
         }
 		
 		System.out.println("raw_words is ****\n"+raw_words.toString());
@@ -1079,7 +1095,7 @@ public class MQTTSemantics {
 			return 1;
 		}else if(platformtype.contains("ali") && key.contains("password")){
 			List<String> func = new ArrayList<String>();
-			func.add("hmac(deviceId,deviceName,productkey)skDev");
+			func.add("hmac(deviceId,deviceName,productKey)skDev");
 			abwords_map.put(key, func); //password, h(secret key)
 			return 1;
 		}
