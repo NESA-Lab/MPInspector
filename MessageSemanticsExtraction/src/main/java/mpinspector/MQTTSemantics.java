@@ -48,7 +48,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("gcp");
+		semantic.setPlatformtype("alitcp");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -367,6 +367,7 @@ public class MQTTSemantics {
 						}
 					}else {
 						con_list.add(content_str);
+						if(platformtype.contains("tuya")) raw_words.put(content_str, "payload");
 						pub_map.put("payload",con_list);
 					}
 				}else {
@@ -853,10 +854,6 @@ public class MQTTSemantics {
         	}
     
         }
-        //tuya timestamp refine 
-        if(platformtype.contains("tuya")) {
-        	raw_words.put(new Integer((int) new Date().getTime()/1000).toString(),"timestamp");
-		}
         
 		
 		System.out.println("raw_words is ****\n"+raw_words.toString());
@@ -1750,7 +1747,16 @@ public class MQTTSemantics {
 						String termKey = value.split("\\((.)+\\)")[0];
 						if((platformtype+"->"+termKey).contentEquals("gcp->password")) {
 							termObj.put("password", encrypt_terms.get("gcp->password"));
-						}else {
+						}else if((platformtype+"->"+termKey).contentEquals("tuya->payload")) {
+							List<String> tmp = new ArrayList<String>();
+							for (String k : raw_words.keySet()) {
+								if (raw_words.get(k).equals("payload")) {
+									tmp.add(k);
+								}
+							}
+							termObj.put(termKey, tmp);
+						}
+						else {
 							List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
 							List<JSONObject> termKeyValuesObj = new ArrayList<>();
 							for(String termKeyValue:termKeyValues) {
