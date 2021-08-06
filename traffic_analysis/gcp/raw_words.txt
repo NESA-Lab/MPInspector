@@ -1,1 +1,1 @@
-{{"msg2":"hello"}=content, projects=V0, devices=V6, AT_MOST_ONCE=qos, us-central1=V3, registries=V4, {"msg1":"hello"}=payload, dev5=V7, optimum-legacy-253101=aud, reg=V5, 1583859236=iat, locations=V2, 1583860436=exp, config=V8}
+{=payload, projects=V0, devices=V6, AT_MOST_ONCE=qos, {this is a payload}=payload, us-central1=V3, registries=V4, dev5=V7, optimum-legacy-253101=aud, reg=V5, 1583859236=iat, locations=V2, 1583860436=exp, config=V8}

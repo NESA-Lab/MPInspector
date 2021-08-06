@@ -48,7 +48,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("bosch");
+		semantic.setPlatformtype("gcp");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -362,10 +362,9 @@ public class MQTTSemantics {
 					ByteBuf content = ((Publish) decoded).getContent();
 					String content_str = convertByteBufToString(content);
 					if(con_list.contains(content_str)) {
-						if(!platformtype.contains("tuya")) {
-							raw_words.put("{\"msg1\":\"hello\"}", "payload");
+						if(platformtype.contains("alitcp")||platformtype.contains("aws")||platformtype.contains("bosch")||platformtype.contains("gcp")) {
+							raw_words.put(content_str, "payload");
 						}
-						raw_words.put("{\"msg2\":\"hello\"}", "content");
 					}else {
 						con_list.add(content_str);
 						pub_map.put("payload",con_list);
@@ -1651,6 +1650,16 @@ public class MQTTSemantics {
 				}else {
 					termKeyValueObj.put(termVal,new ArrayList<String>());
 				}
+				//ali refine
+				if(platformtype.contains("alitcp")&&termVal.contentEquals("deviceId")) {
+					List<String> tmp = new ArrayList<String>();
+					for (String k : raw_words.keySet()) {
+						if (raw_words.get(k).equals("V0")) {
+							tmp.add(k);
+						}
+					}
+					termKeyValueObj.put(termVal,tmp);
+				}
 				ans.add(termKeyValueObj);
 			}
 		}else {
@@ -1709,6 +1718,7 @@ public class MQTTSemantics {
 							List<String> termKeyValues = abwords_map.get(key+"->"+termKey);
 							for(String termKeyValue:termKeyValues) {
 								JSONObject termKeyValueObj = new JSONObject();
+								
 								if(raw_words.containsValue(termKeyValue)) {
 									List<String> tmp = new ArrayList<String>();
 									for (String k : raw_words.keySet()) {
@@ -1719,6 +1729,16 @@ public class MQTTSemantics {
 									termKeyValueObj.put(termKeyValue,tmp);
 								}else {
 									termKeyValueObj.put(termKeyValue,new ArrayList<String>());
+								}
+								//ali refine
+								if(platformtype.contains("alitcp")&&termKeyValue.contentEquals("deviceId")) {
+									List<String> tmp = new ArrayList<String>();
+									for (String k : raw_words.keySet()) {
+										if (raw_words.get(k).equals("V0")) {
+											tmp.add(k);
+										}
+									}
+									termKeyValueObj.put(termKeyValue,tmp);
 								}
 								termList.add(termKeyValueObj);
 							}
