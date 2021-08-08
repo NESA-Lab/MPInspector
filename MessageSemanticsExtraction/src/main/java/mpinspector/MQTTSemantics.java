@@ -48,7 +48,7 @@ public class MQTTSemantics {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("alitcp");
+		semantic.setPlatformtype("tuya");
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
@@ -111,6 +111,7 @@ public class MQTTSemantics {
     	//store the relationship betweem terms and words  password -> jwt(iat, exp, aud)
     	//topic -> v9, devices, v12, qos
     	Map<String, String> raw_words = new HashMap<String,String>();
+    	Map<String, Object> raw_values = new HashMap<String,Object>();
     	//Map<String, String> words_map = new HashMap<String,String>();
     	//abwords_map: a Map <String, List<String>> a map, terms to word
 		//example <password, <(jwt<a,b,c>,tokenkey,alg)>>;
@@ -155,6 +156,7 @@ public class MQTTSemantics {
 			case "CONNECT":
 				if(con_map.containsKey("username")) {
 					List<String> con_list = con_map.get("username");
+					raw_values.put("username", con_list.get(0));
 					if(platformtype.contains("tuya")) {
 						raw_words.put(con_list.get(0), "username");
 					}
@@ -174,18 +176,18 @@ public class MQTTSemantics {
 				if(con_map.containsKey("password")) {
 					// System.out.println("password con_list:" + con_list);
 					List<String> con_list = con_map.get("password");
-					
+					raw_values.put("password", con_list.get(0));
 					if(con_list.contains(((Connect) decoded).getPassword())) {
 						//bosch refind
-				        if(platformtype.contains("bosch")) {
+				        if(platformtype.contains("bosch")||platformtype.contains("tuya")) {
 				        	raw_words.put(con_list.get(0),"password");
 				        }
 					}else {
 						con_list.add(((Connect) decoded).getPassword());
 						con_map.put("password",con_list);
-						if(platformtype.contains("tuya")) {
-				        	raw_words.put(con_list.get(0),"password");
-				        }
+//						if(platformtype.contains("tuya")) {
+//				        	raw_words.put(con_list.get(0),"password");
+//				        }
 					}
 				}else {
 					List<String> con_list = new ArrayList<String>();
@@ -194,7 +196,7 @@ public class MQTTSemantics {
 				}
 				if(con_map.containsKey("clientID")) {
 					List<String> con_list = con_map.get("clientID");
-					
+					raw_values.put("clientID", con_list.get(0));
 					if(con_list.contains(((Connect) decoded).getClientID())) {
 						//clientId refine
 				        if(platformtype.contains("azure")||platformtype.contains("aws")||platformtype.contains("bosch")||platformtype.contains("tuya")) {
@@ -341,9 +343,10 @@ public class MQTTSemantics {
 				break;
 			case "PUBLISH":
 				//new MQTTSemantic().getTermsMap(terms_raw, pub_map);
-				if(pub_map.containsKey("topic")) {
+				if(pub_map.containsKey("topic")) {				
 					List<String> con_list = pub_map.get("topic");
 					Topic topic = ((Publish) decoded).getTopic();
+					raw_values.put("topic", con_list);
 					if(con_list.contains(topic.toString())) {
 						
 					}else {
@@ -361,6 +364,7 @@ public class MQTTSemantics {
 					List<String> con_list = pub_map.get("payload");
 					ByteBuf content = ((Publish) decoded).getContent();
 					String content_str = convertByteBufToString(content);
+					raw_values.put("payload", con_list);
 					if(con_list.contains(content_str)) {
 						if(platformtype.contains("alitcp")||platformtype.contains("aws")||platformtype.contains("bosch")||platformtype.contains("gcp")) {
 							raw_words.put(content_str, "payload");
@@ -929,6 +933,7 @@ public class MQTTSemantics {
          * Combine the parameter and raw_words
          *******************/
         writeFinalResult(packets_abterms,abwords_map,raw_words,encrypt_terms,terms_map_in_a_log,output_dir,"result.json",semantic.platformtype);
+        writeRawResult(raw_values,output_dir,"raw.json",semantic.platformtype);
 //        writeMapListintoFile(packets_abterms, "iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"parameter.txt");
 //        writeMapListintoFile(abwords_map, "projects\\iot prtocol project\\trafficanalysis\"+semantic.platformtype+"abwords_map.txt");
 //        writeMapStringintoFile(raw_words, "projects\\iot prtocol project\\trafficanalysis\\"+semantic.platformtype+"raw_words.txt");
@@ -1674,6 +1679,49 @@ public class MQTTSemantics {
 			ans.add(termObj);
 		}
 		return ans;
+	}
+	private static void writeRawResult(Map<String,Object> raw_values,String filepath,String filename,String platformtype) {
+		try {
+        	File savefilepath = new File(filepath);
+        	if (!savefilepath.exists()){
+        		savefilepath.mkdir();
+                System.out.println("Create dir: "+ savefilepath);
+        	}
+			File file1 = new File(filepath,filename);
+			if (!file1.exists()) {
+		        System.out.println("File does not exist");
+		        file1.createNewFile();
+		    }
+			FileWriter fileWritter = new FileWriter(file1,false);
+			JSONObject finalResult = new JSONObject();
+			for(Map.Entry<String,Object> entry:raw_values.entrySet()) {
+				if(entry.getKey().contains("username")||entry.getKey().contains("password")||entry.getKey().contains("clientID")) {
+					if(entry.getValue()==null) continue;
+					finalResult.put(entry.getKey(), (String)(entry.getValue()));
+				}else {
+					if(entry.getValue()==null) continue;
+					if(entry.getKey().contains("topic")) {
+						List<String> topics = new ArrayList<>();
+						for(String topic:(List<String>)(entry.getValue())) {
+							topics.add(topic.split(":")[0]);
+						}
+						finalResult.put(entry.getKey(), topics);
+					}else {
+						finalResult.put(entry.getKey(), (List<String>)(entry.getValue()));
+					}
+					
+					
+				}
+			}
+			fileWritter.write(finalResult.toString());
+			
+			fileWritter.close();
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	private static void writeFinalResult(Map<String, List<String>> parameters,Map<String, List<String>> abwords_map,Map<String, String> raw_words,Map<String,JSONObject> encrypt_terms,Map<String,List<String>> terms_map_in_a_log,String filepath,String filename,String platformtype) {
 		/******************

@@ -1,0 +1,18 @@
+{
+    "password": "Kan1999...",
+    "clientID": "b7a54e7403004d80b21f18df5fa4007e",
+    "payload": [
+        "{\"msg1\":\"hello\"}",
+        "{\"msg2\":\"hello\"}",
+        "{\"msg4\":\"hello\"}",
+        "{\"msg5\":\"hello\"}",
+        "{\"msg6\":\"hello\"}",
+        "{\"msg7\":\"hello\"}",
+        "{\"msg8\":\"hello\"}"
+    ],
+    "topic": [
+        "telemetry",
+        "hello"
+    ],
+    "username": "bosch20190924@td1b34cf6c40f46ecbf03778d6820cf83"
+}
