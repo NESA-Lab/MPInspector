@@ -1,0 +1,39 @@
+device:
+  platform_name: azure
+  username: >-
+    NesaIot-1.azure-devices.net/dev1/api-version=2019-03-30&DeviceClientType=azure-iot-device%2F1.12.0%20(node%20v12.13.1%3B%20Ubuntu%20Linux%2018.04%3B%20x64)
+  clientId: dev1
+  password:
+    method: fixed
+    data: >-
+      SharedAccessSignature
+      sr=NesaIot-1.azure-devices.net%2Fdevices%2Fdev1&se=1691842637&sig=YEfKw5xfCYHI%2Bv9SkOuzveNr7C1LXcqWPRlTnTvg1PI%3D
+  sub_defaults:
+    topic: 'devices/dev1/messages/devicebound/#'
+  unsub_defaults:
+    topic: 'devices/dev1/messages/devicebound/#'
+    qos: 1
+  pub_defaults:
+    topic: devices/dev1/messages/events/temperatureAlert=false
+    payload:
+      method: fixed
+      data: fixed message
+encryptedTerms:
+  - env:
+      - CONNECT
+      - password
+      - sr
+    val: NesaIot-1.azure-devices.net%2Fdevices%2Fdev1
+    method: sas
+  - env:
+      - CONNECT
+      - password
+      - se
+    val: '1691842637'
+    method: sas
+  - env:
+      - CONNECT
+      - password
+      - sig
+    val: YEfKw5xfCYHI%2Bv9SkOuzveNr7C1LXcqWPRlTnTvg1PI%3D
+    method: sas

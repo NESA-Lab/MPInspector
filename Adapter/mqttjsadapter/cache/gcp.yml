@@ -1,0 +1,134 @@
+device:
+  protocol: mqtts
+  secureProtocol: TLSv1_2_method
+  host: mqtt.googleapis.com
+  port: 8883
+  platform_name: gcp
+  clientId: >-
+    projects/optimum-legacy-253101/locations/us-central1/registries/reg/devices/dev5
+  password:
+    method: jwt
+    token:
+      aud: optimum-legacy-253101
+    algorithm: RS256
+    privateKey: google jwt test
+  sub_defaults:
+    qos: 0
+    topic: devices/dev5/config
+  unsub_defaults:
+    topic: devices/dev5/config
+    qos: 1
+  pub_defaults:
+    topic: devices/dev5/config
+    qos: 0
+    payload:
+      method: fixed
+      data: '{"msg1":"hello"}'
+encryptedTerms:
+  - env:
+      - CONNECT
+      - password
+      - aud
+    val: optimum-legacy-253101
+    method: jwt
+deviceJson:
+  CONNACK: []
+  SUBACK:
+    - qos:
+        - AT_MOST_ONCE
+    - getPacketID(): []
+  UNSUBSCRIBE:
+    - topics:
+        - V6:
+            - devices
+        - V7:
+            - dev5
+        - V8:
+            - config
+    - getPacketID(): []
+  CONNECT:
+    - password:
+        aud: optimum-legacy-253101
+        typ: JWT
+        exp: 1583860436
+        alg: RS256
+        iat: 1583859236
+        encry_key: google jwt test
+    - clientID:
+        - V0:
+            - projects
+        - aud:
+            - optimum-legacy-253101
+        - V2:
+            - locations
+        - V3:
+            - us-central1
+        - V4:
+            - registries
+        - V5:
+            - reg
+        - V6:
+            - devices
+        - V7:
+            - dev5
+  UNSUBACK:
+    - getPacketID(): []
+  PUBLISH:
+    - payload:
+        - '{"msg1":"hello"}'
+    - topic:
+        - qos:
+            - AT_MOST_ONCE
+        - V6:
+            - devices
+        - V7:
+            - dev5
+        - V8:
+            - config
+  PUBACK:
+    - getPacketID(): []
+  SUBSCRIBE:
+    - topics:
+        - qos:
+            - AT_MOST_ONCE
+        - V6:
+            - devices
+        - V7:
+            - dev5
+        - V8:
+            - config
+    - getPacketID(): []
+  platform: gcp
+  SERVER:
+    protocol: mqtts
+    secureProtocol: TLSv1_2_method
+    host: mqtt.googleapis.com
+    port: 8883
+    platform_name: gcp
+    clientId: >-
+      projects/optimum-legacy-253101/locations/us-central1/registries/reg/devices/dev5
+    password:
+      method: jwt
+      token:
+        aud: optimum-legacy-253101
+      algorithm: RS256
+      privateKey: google jwt test
+    sub_defaults:
+      qos: 0
+      topic: devices/dev5/config
+    unsub_defaults:
+      topic: devices/dev5/config
+      qos: 1
+    pub_defaults:
+      topic: devices/dev5/config
+      qos: 0
+      payload:
+        method: fixed
+        data: '{"msg1":"hello"}'
+deviceArgs:
+  debug_result_yaml_save_path: cache/gcp.yml
+  userFilledTerms.gcp.jwt.key: google jwt test
+  userFilledTerms.protocol: mqtts
+  userFilledTerms.secureProtocol: TLSv1_2_method
+  userFilledTerms.host: mqtt.googleapis.com
+  userFilledTerms.port: 8883

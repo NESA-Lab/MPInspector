@@ -13,6 +13,14 @@
         <div id="ct">
 
         </div>
+        <div>
+            Data0
+            <textarea id='post.body0' style="width: 600px;height:100px; font-size: 15px;"></textarea>
+            Data1
+            <textarea id='post.body1' style="width: 600px;height:100px; font-size: 15px;"></textarea>
+            <button id='post' style="height:40px;width: 80px;">POST</button>
+            <div id="post.args"> </div>
+        </div>
     </div>
 
     <div>
@@ -23,14 +31,25 @@
     </div>
 
     <script>
+        const argsPullers = []
         const addCheat = (what)=>{
+            const post = what.startsWith('@post ');
             const d = document.createElement('div');
+            let url = what
+            if(post) {
+                url = what.slice(6)
+            }
             
             const b = document.createElement('button')
             b.innerHTML = 'SEND'
             d.onclick = ()=>{
-                document.getElementById('ipt').value = what;
-                document.getElementById('snd').click()
+                document.getElementById('ipt').value = url;
+
+                if(post){
+                    document.getElementById('post').click()
+                } else {
+                    document.getElementById('snd').click()
+                }
             }
             d.innerHTML = `${what}`
             d.appendChild(b)
@@ -38,6 +57,35 @@
             d
             )
         }
+
+        const addResponse = (url, t)=>{
+            const d = document.createElement('div')
+            d.style = 'border: 2px solid #333; margin: 10px; padding-left: 10px;'
+            d.innerHTML = `
+                <p>URL: ${url}</p>
+                <p>Response: ${t}</p>
+            `
+            document.getElementById('r').prepend(d)
+        }
+
+        const addPostArgs = (x) => {
+            const d = document.createElement("div")
+            const s = document.createElement("select")
+            const opts = ["", ...x[1]].map((a,id)=>`<option value ="${id}">${a}</option>`)
+            s.value = "0"
+            s.innerHTML = opts.join()
+            d.innerHTML = `${x[0]}: `
+            d.append(s)
+            argsPullers.push((obj)=>{
+                const id = parseInt(s.value);
+                if(id != 0) {
+                    obj[x[0]] = x[1][id-1]
+                }
+            })
+            document.getElementById("post.args").append(d)
+        }
+
+        
         [
             '/mqtt/initClient/?filename=platforms/azure/dev1.yml',
             '/mqtt/initClient/?filename=platforms/azure/dev2.yml',
@@ -54,23 +102,73 @@
             '/mqtt/reset',
             '/mqtt/publish',
             '/mqtt/subscribe',
-			'/mqtt/unsubscribe'
-        ].map((x)=>addCheat(x))
+			'/mqtt/unsubscribe',
+
+            '@post /mqtt/config/fromTrafficAnalysis',
+            '/mqtt/config/initClient',
+            '/mqtt/config/analyze/fields',
+        ].map((x)=>addCheat(x));
+
+        [
+            ['protocol',       ['mqtt', 'mqtts'], ''],
+            ['secureProtocol', ['TLSv1_2_method'], 'choose only when mqtts protcol is used'],
+            ['host',           [],                         'MQTT server address'],
+            ['port',           [],                         'MQTT server Port'],
+            ['password.privateKey', [],            'Used for Google IoT\'s password field']
+        ];
+
+        [
+            ["debug_result_yaml_save_path", ["cache/gcp.yml","cache/ali.yml", "cache/azure.yml", "cache/bosch.yml", "cache/aws.yml", "cache/mos.yml"]],
+            ["parsingOptions.enforcePasswordUseRaw", [true, false]],
+            ["parsingOptions.passwordRaw", ["mosq_dummy_password"]],
+            ...[
+                ["alitcp.password.key", ["some ali password encryption key"]],
+                ["gcp.jwt.key",         ["google jwt test"]],
+                ["tuya.publish.key",    ["tuya local key test"]],
+                ["protocol",            ["mqtts"]],
+                ["secureProtocol",      ["TLSv1_2_method"]],
+                ["host",                ["127.0.0.1","mqtt.googleapis.com", "tcp://a1EQiFSQ6Js.iot-as-mqtt.cn-shanghai.aliyuncs.com"]],
+                ["port",                [9091, 8883, 1883]],
+                // ["password.raw",        ["mosq_dummy_password"]],
+                
+            ].map((x)=>{ x[0] = "userFilledTerms." + x[0]; return x })
+        ].map((x)=>addPostArgs(x));
 
         document.getElementById('snd').onclick = async ()=>{
             const url = document.getElementById('ipt').value
             const res = await fetch(url)
             const t = await res.text()
 
-            const d = document.createElement('div')
-            d.style = 'border: 2px solid #333; margin: 10px; padding-left: 10px;'
-            d.innerHTML = `
-                <p>URL: ${url}</p>
-                <p>Response: ${t}</p>
-            `
-            document.getElementById('r').prepend(d)
+            addResponse(url, t)
         }
 
+        document.getElementById('post').onclick = async ()=> {
+            const url = document.getElementById('ipt').value
+            const content0 = document.getElementById('post.body0').value
+            const content1 = document.getElementById('post.body1').value
+            const args = {}; argsPullers.forEach((x)=>x(args))
+            const body = {
+                args: args,
+                data0: content0,
+                data1: content1,
+            }
+            console.log(body)
+            const res = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            })
+            const t = await res.text()
+            addResponse(url, t)
+
+            x = {
+                method: 'urlencode',
+                url: 'NestIoT....net',
+                params: {
+                    "api-version": 'xxxx',
+                    "clienttype": "///"
+                }
+            }
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,146 @@
+device:
+  host: 127.0.0.1
+  port: 9091
+  platform_name: alitcp
+  username: Unit02&a1EQiFSQ6Js
+  clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+  password:
+    method: use_raw
+    key: skDev
+    deviceId: mpinspector
+    deviceName: Unit02
+    productKey: a1EQiFSQ6Js
+    raw: mosq_dummy_password
+  sub_defaults:
+    topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+  unsub_defaults:
+    topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    qos: 1
+  pub_defaults:
+    topic: a1EQiFSQ6Js/Unit02/user/update
+    payload:
+      method: fixed
+      data: '{"msg1":"hello"}'
+encryptedTerms: []
+encryptedFields:
+  - env:
+      - CONNECT
+      - password
+    val: mosq_dummy_password
+deviceJson:
+  CONNACK: []
+  SUBACK:
+    - qos:
+        - AT_MOST_ONCE
+        - AT_LEAST_ONCE
+    - getPacketID(): []
+  UNSUBSCRIBE:
+    - topics:
+        - V2:
+            - sys
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V5:
+            - thing
+        - V6:
+            - event
+        - V7:
+            - property
+        - V8:
+            - post_reply
+    - getPacketID(): []
+  CONNECT:
+    - password:
+        - method: hmacsha1
+          encry_key: skDev
+          encry_term:
+            - deviceId:
+                - mpinspector
+            - deviceName:
+                - Unit02
+            - productKey:
+                - a1EQiFSQ6Js
+    - clientID:
+        - deviceId:
+            - mpinspector
+        - V1:
+            - 'securemode=3,signmethod=hmacsha1'
+    - username:
+        - deviceName:
+            - Unit02
+        - productKey:
+            - a1EQiFSQ6Js
+  UNSUBACK:
+    - getPacketID(): []
+  PUBLISH:
+    - payload:
+        - '{"msg1":"hello"}'
+    - topic:
+        - qos:
+            - AT_MOST_ONCE
+            - AT_LEAST_ONCE
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V9:
+            - user
+        - V10:
+            - update
+  PUBACK:
+    - getPacketID(): []
+  SUBSCRIBE:
+    - topics:
+        - qos:
+            - AT_MOST_ONCE
+            - AT_LEAST_ONCE
+        - V2:
+            - sys
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V5:
+            - thing
+        - V6:
+            - event
+        - V7:
+            - property
+        - V8:
+            - post_reply
+    - getPacketID(): []
+  platform: alitcp
+  SERVER:
+    host: 127.0.0.1
+    port: 9091
+    platform_name: alitcp
+    username: Unit02&a1EQiFSQ6Js
+    clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+    password:
+      method: use_raw
+      key: skDev
+      deviceId: mpinspector
+      deviceName: Unit02
+      productKey: a1EQiFSQ6Js
+      raw: mosq_dummy_password
+    sub_defaults:
+      topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    unsub_defaults:
+      topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+      qos: 1
+    pub_defaults:
+      topic: a1EQiFSQ6Js/Unit02/user/update
+      payload:
+        method: fixed
+        data: '{"msg1":"hello"}'
+deviceArgs:
+  debug_result_yaml_save_path: cache/mos.yml
+  parsingOptions.enforcePasswordUseRaw: true
+  parsingOptions.passwordRaw: mosq_dummy_password
+  userFilledTerms.host: 127.0.0.1
+  userFilledTerms.port: 9091
+parsingOpts:
+  enforcePasswordUseRaw: true
+  passwordRaw: mosq_dummy_password

@@ -1,0 +1,16 @@
+device:
+  platform_name: aws
+  clientId: 4c354273ca9e4104b2cd2e51b6fe7977
+  sub_defaults:
+    qos: 0
+    topic: hello
+  unsub_defaults:
+    topic: hello
+    qos: 1
+  pub_defaults:
+    topic: hello
+    qos: 0
+    payload:
+      method: fixed
+      data: '{"msg1":"hello"}'
+encryptedTerms: []

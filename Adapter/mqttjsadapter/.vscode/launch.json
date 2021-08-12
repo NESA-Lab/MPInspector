@@ -28,6 +28,12 @@
                 "--privateKeyFile=../crt_rsa_private.pem",
                 "--algorithm=RS256"
             ],
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch MClient",
+            "program": "${workspaceFolder}/mclient.js"
         }
     ]
 }

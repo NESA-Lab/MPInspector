@@ -1,0 +1,134 @@
+device:
+  host: 'tcp://a1EQiFSQ6Js.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+  port: 1883
+  platform_name: alitcp
+  username: Unit02&a1EQiFSQ6Js
+  clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+  password:
+    method: use_raw
+    raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
+  sub_defaults:
+    topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+  unsub_defaults:
+    topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    qos: 1
+  pub_defaults:
+    topic: a1EQiFSQ6Js/Unit02/user/update
+    payload:
+      method: fixed
+      data: '{"msg1":"hello"}'
+encryptedTerms: []
+encryptedFields:
+  - env:
+      - CONNECT
+      - password
+    val: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
+deviceJson:
+  CONNACK: []
+  SUBACK:
+    - qos:
+        - AT_MOST_ONCE
+        - AT_LEAST_ONCE
+    - getPacketID(): []
+  UNSUBSCRIBE:
+    - topics:
+        - V2:
+            - sys
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V5:
+            - thing
+        - V6:
+            - event
+        - V7:
+            - property
+        - V8:
+            - post_reply
+    - getPacketID(): []
+  CONNECT:
+    - password:
+        - method: use_raw
+          encry_key: ali_password
+          encry_term:
+            - deviceId:
+                - mpinspector
+            - deviceName:
+                - Unit02
+            - productKey:
+                - a1EQiFSQ6Js
+    - clientID:
+        - deviceId:
+            - mpinspector
+        - V1:
+            - 'securemode=3,signmethod=hmacsha1'
+    - username:
+        - deviceName:
+            - Unit02
+        - productKey:
+            - a1EQiFSQ6Js
+  UNSUBACK:
+    - getPacketID(): []
+  PUBLISH:
+    - payload:
+        - '{"msg1":"hello"}'
+    - topic:
+        - qos:
+            - AT_MOST_ONCE
+            - AT_LEAST_ONCE
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V9:
+            - user
+        - V10:
+            - update
+  PUBACK:
+    - getPacketID(): []
+  SUBSCRIBE:
+    - topics:
+        - qos:
+            - AT_MOST_ONCE
+            - AT_LEAST_ONCE
+        - V2:
+            - sys
+        - productKey:
+            - a1EQiFSQ6Js
+        - deviceName:
+            - Unit02
+        - V5:
+            - thing
+        - V6:
+            - event
+        - V7:
+            - property
+        - V8:
+            - post_reply
+    - getPacketID(): []
+  platform: alitcp
+  SERVER:
+    host: 'tcp://a1EQiFSQ6Js.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+    port: 1883
+    platform_name: alitcp
+    username: Unit02&a1EQiFSQ6Js
+    clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+    password:
+      method: use_raw
+      raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
+    sub_defaults:
+      topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    unsub_defaults:
+      topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+      qos: 1
+    pub_defaults:
+      topic: a1EQiFSQ6Js/Unit02/user/update
+      payload:
+        method: fixed
+        data: '{"msg1":"hello"}'
+deviceArgs:
+  debug_result_yaml_save_path: cache/ali.yml
+  userFilledTerms.alitcp.password.key: ali_password
+  userFilledTerms.host: 'tcp://a1EQiFSQ6Js.iot-as-mqtt.cn-shanghai.aliyuncs.com'
+  userFilledTerms.port: 1883

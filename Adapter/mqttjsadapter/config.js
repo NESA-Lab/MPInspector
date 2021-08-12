@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-const readSync = require("node-yaml").readSync
-
+const yaml = require("node-yaml")
+const readSync = yaml.readSync
+const writeSync = yaml.writeSync
+const CryptoJS = require("crypto-js");
 
 const PasswordGenerator = {
     fixed: (password) => {
@@ -14,8 +16,31 @@ const PasswordGenerator = {
             exp: parseInt(Date.now() / 1000) + 20 * 60, // 20 minutes
           };
           Object.assign(token, password.token)
-          const privateKey = fs.readFileSync(password.privateKeyFile);
-            return jwt.sign(token, privateKey, {algorithm: password.algorithm});
+          let privateKey = password.privateKey
+          if(password.privateKeyFile) {
+              privateKey = fs.readFileSync(password.privateKeyFile);
+          }
+          return jwt.sign(token, privateKey, {algorithm: password.algorithm});
+    },
+    tuya_publish: (password) => {
+        const key_string = password.localKey
+        const msg = password.data
+        const key = CryptoJS.enc.Utf8.parse(key_string)
+        const enc = CryptoJS.AES.encrypt(msg, key, { 
+                                         padding: CryptoJS.pad.Pkcs7, 
+                                         mode: CryptoJS.mode.ECB}).toString()
+        const tobe_signed = 'data=' + enc + '||pv=2.1||' + key_string
+        const sig = CryptoJS.MD5(tobe_signed).toString(CryptoJS.enc.Hex)
+        return '2.1' + sig.slice(8,24) + enc;
+    },
+    ali_password: (password) => {
+        return CryptoJS.HmacSHA1(
+            `clientId${password.deviceId}deviceName${password.deviceName}productKey${password.productKey}`,
+            password.key
+        ).toString(CryptoJS.enc.Hex).toUpperCase()
+    },
+    use_raw: (password) => {
+        return password.raw
     }
 }
 
@@ -37,14 +62,23 @@ function UseAccessor(client, generator, field, filename) {
     })
 }
 
+function LoadClientFromConfigObject(client, filename)
+{
+    if(!filename)
+    {
+        filename = "."
+    }
+    UseAccessor(client, PasswordGenerator, "password", filename);
+    UseAccessor(client["pub_defaults"], PasswordGenerator, "payload", filename);
+
+    return client;
+}
+
 function LoadClientFromConfig(filename) 
 {
     const client = readSync(filename);
     
-    UseAccessor(client, PasswordGenerator, "password", filename);
-    UseAccessor(client["pub_defaults"], PubPayloadGenerator, "payload", filename);
-
-    return client;
+    return LoadClientFromConfigObject(client, filename)
 }
 
 // Create a Cloud IoT Core JWT for the given project id, signed with the given
@@ -68,7 +102,9 @@ function createJwt(projectId, privateKeyFile, algorithm) {
 
 const Config = ()=>{
     return {
-        LoadClientFromConfig: LoadClientFromConfig
+        LoadClientFromConfig: LoadClientFromConfig,
+        YamlWrite: writeSync,
+        LoadClientFromConfigObject, LoadClientFromConfigObject
     }
 }
 

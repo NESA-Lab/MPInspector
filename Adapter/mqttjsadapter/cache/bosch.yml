@@ -1,0 +1,18 @@
+device:
+  platform_name: bosch
+  username: bosch20190924@td1b34cf6c40f46ecbf03778d6820cf83
+  clientId: b7a54e7403004d80b21f18df5fa4007e
+  password: Kan1999...
+  sub_defaults:
+    qos: 0
+    topic: 'command/+/+/req/#'
+  unsub_defaults:
+    topic: 'command/+/+/req/#'
+    qos: 1
+  pub_defaults:
+    topic: telemetry
+    qos: 0
+    payload:
+      method: fixed
+      data: '{"msg1":"hello"}'
+encryptedTerms: []

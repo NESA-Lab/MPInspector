@@ -3,11 +3,22 @@
 const fs = require('fs');
 const mqtt = require('mqtt');
 const mqttPacket = require('mqtt-packet');
-const LoadClientFromConfig = require('./config')().LoadClientFromConfig //loadconfig
-const express = require('express')
+const _configManger = require('./config')()
+const LoadClientFromConfig = _configManger.LoadClientFromConfig //loadconfig
+const YamlWrite = _configManger.YamlWrite
+const LoadClientFromConfigObject = _configManger.LoadClientFromConfigObject
+const express = require('express');
+const _parseTrafficAnalysisResult = require('./parse_analysis_result');
+const parseTrafficAnalysisResult = _parseTrafficAnalysisResult.parseTrafficAnalysisResult;
+const fillInMissingTerms = _parseTrafficAnalysisResult.fillInMissingTerms;
+const tryModifyStringOrNumber = _parseTrafficAnalysisResult.tryModifyStringOrNumber;
+const updateDeviceField = _parseTrafficAnalysisResult.updateDeviceField
 const app = express()
 const port = 9123  //mqtt5
 const log_dir = './log/'
+
+
+
 
 
 
@@ -33,7 +44,7 @@ class MyMqttClient {
 
     setDevice(device, log) {
         if(device == null) return;
-        console.log(device.properties);
+        console.log('device properties: ', device.properties);
         const additional_connect_args = device.additional_connect_args || {}
         const connectionArgs = {
             host: device.host,
@@ -60,6 +71,7 @@ class MyMqttClient {
 
             ...additional_connect_args
         };
+        console.log(connectionArgs)
 
         this.device = device
         const client = mqtt.connect(connectionArgs);
@@ -86,7 +98,7 @@ class MyMqttClient {
           client.on('error', err => {
             log(`[${platform}]: error: ${err}`);
             if(this.resolve_fn) {
-                this.resolve_fn('error')
+                this.resolve_fn(this.detail_err_ret? `error: ${err}` : 'error')
                 this.resolve_fn = null;
                 this.resolve_handled = true
             }
@@ -190,7 +202,7 @@ class MyMqttClient {
         async disconnect()
         {
             return new Promise((resolve)=>{
-                if(this.closed) {
+                if(this.closed || !this.client) {
                     resolve('closed')
                     this.log(`[${this.platform_name}]: already closed`)
                     return;
@@ -346,12 +358,286 @@ class MyMqttClient {
 }
 
 let client = new MyMqttClient
+let config = {}
+let debug = true
 
+app.use(function(req, res, next){
+    var data = "";
+    req.on('data', function(chunk){ data += chunk})
+    req.on('end', function(){
+       req.rawBody = data;
+       next();
+    })
+ })
 
 // for test
 app.get('/', (req, res)=>{
     //res.send(fs.readFileSync("index.html"))
     res.sendFile("index.html", { root: __dirname })
+})
+
+app.post('/mqtt/config/fromTrafficAnalysis', async (req, res, next) => {
+    console.log("[Traffic Analysis] Load Json")
+    const conf = JSON.parse(req.rawBody)
+    conf.data = JSON.parse(conf.data0);
+    conf.raw = JSON.parse(conf.data1)
+    
+    if(conf.data.SERVER === undefined)
+    {
+        conf.data.SERVER = {}
+    }
+    console.log(conf)
+
+    console.log("[Traffic Analysis] Filling missing terms")
+    const userfillkw = "userFilledTerms."
+    const parsingoptskw = "parsingOptions."
+    const missingTerms = {}
+    const parsingOpts = {}
+    for (let propName in conf.args) {
+        if (conf.args.hasOwnProperty(propName)) {
+            if(propName.startsWith(userfillkw)) {
+                const k = propName.slice(userfillkw.length)
+                const v = conf.args[propName]
+                fillInMissingTerms(conf.data, k, v)
+                missingTerms[k] = v
+            }
+            if(propName.startsWith(parsingoptskw)) {
+                const k = propName.slice(parsingoptskw.length)
+                const v = conf.args[propName]
+                parsingOpts[k] = v
+            }
+        }
+    }
+    console.log(missingTerms)
+
+    console.log("[Traffic Analysis] Start parsing")
+    config = parseTrafficAnalysisResult(conf.data, conf.raw, parsingOpts)
+    config.deviceJson = conf.data
+    config.deviceArgs = conf.args
+    config.parsingOpts = parsingOpts
+
+    if(debug && conf.args.debug_result_yaml_save_path) {
+        // remove `undefined` fields
+        const c = JSON.parse(JSON.stringify(config))
+        YamlWrite(conf.args.debug_result_yaml_save_path, c)
+    }
+    res.send(config)
+})
+
+// app.get('/mqtt/config/fill', async (req, res, next) => {
+//     for (var propName in req.query) {
+//         if (req.query.hasOwnProperty(propName)) {
+//             console.log(propName, req.query[propName]);
+//         }
+//     }
+// })
+
+app.get('/mqtt/config/initClient', async (req, res, next) => {
+    client = new MyMqttClient
+    const device = LoadClientFromConfigObject(config.device)
+    await client.setDevice(device)
+    res.send('ok')
+})
+
+app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
+    const targets = config.encryptedFields
+    console.log(`[Traffic Analysis] Analyzing encrypted fields, ${targets.length} is found`)
+    const deepclone = (x) => JSON.parse(JSON.stringify(x))
+    const originalDeviceJson = config.deviceJson
+    const analysis = []
+    const steplog = (x, error) => {
+        if(error) console.error("   X -> " + x)
+        else console.log("     -> " + x)
+    }
+
+    const stages = [
+        {   name: 'connect',
+            goodResponse: 'connack'
+        },
+
+        {   name: 'publish',
+            goodResponse: 'success'
+        },
+
+        {   name: 'subscribe',
+            goodResponse: 'success'
+        },
+
+        {   name: 'unsubscribe',
+            goodResponse: 'success'
+        },
+
+        {   name: 'disconnect',
+            goodResponse: 'disconnect'
+        }
+    ]
+
+    const runAllStages =  async (ends) => {
+        for(let stage of stages) {
+            const response = await client[stage.name]()
+            if(response === stage.goodResponse) {
+                steplog(stage.name + ": " + response)
+            }
+            else {
+                steplog(stage.name + ": " + response, true)
+                return {
+                    success: false,
+                    stage: stage,
+                    response: response
+                }
+            }
+            if(ends && ends.toLowerCase() === stage.name.toLowerCase())
+            {
+                break;
+            }
+        }
+        return {
+            success: true,
+            stage: ends,
+            response: ""
+        }
+    }
+
+    const reset = async () => {
+        const resetresult = await client.reset(); steplog("reset: " + resetresult)
+    }
+    for(let term of targets) {
+        const newDeviceJson = deepclone(originalDeviceJson)
+        // update password field, make sure it uses raw
+        updateDeviceField(newDeviceJson, [...term.env, "raw"], term.val)
+        updateDeviceField(newDeviceJson, [...term.env, "method"], "use_raw")
+        let newConfig = parseTrafficAnalysisResult(newDeviceJson, undefined)
+        await client.disconnect()
+        client = new MyMqttClient;
+        client.detail_err_ret = true
+        client.setDevice(LoadClientFromConfigObject(deepclone(newConfig.device))); await reset();
+
+        // if the server accept the replayed message
+        // it means the message has no timestamp
+        let result = await runAllStages(term.env[0])
+        if(!result.success) {
+            analysis.push({
+                encryptedField: term,
+                newValue: term.val,
+                replayable: false,
+                modifiable: null,
+                stage: result.stage.name,
+                reason: result.response
+            })
+            continue
+        }
+
+        const newValue = tryModifyStringOrNumber(term.val)
+        updateDeviceField(newDeviceJson, [...term.env, "raw"], newValue)
+        newConfig = parseTrafficAnalysisResult(newDeviceJson, undefined)
+        await client.disconnect()
+        client = new MyMqttClient;
+        client.detail_err_ret = true
+        client.setDevice(LoadClientFromConfigObject(deepclone(newConfig.device))); await reset();
+        
+        // the server will check the timestamp
+        result = await runAllStages(term.env[0])
+        if(result.success) {
+            analysis.push({
+                encryptedField: term,
+                newValue: newValue,
+                replayable: true,
+                modifiable: true,
+                stage: result.stage.name,
+                reason: result.response
+            })
+        }
+        else {
+            analysis.push({
+                term: term,
+                newValue: newValue,
+                replayable: true,
+                modifiable: false,
+                stage: result.stage.name,
+                reason: result.response
+            })
+        }
+    }
+
+    // config.device = originalDevice
+    res.send(analysis)
+})
+
+app.get('/mqtt/config/analyze/terms', async (req, res, next) => {
+    console.log(`[Traffic Analysis] Analyzing encrypted terms, ${config.encryptedTerms.length} is found`)
+    const deepclone = (x) => JSON.parse(JSON.stringify(x))
+    const originalDeviceJson = config.deviceJson
+    const rejects = {}
+    const steplog = (x, error) => {
+        if(error) console.error("   X -> " + x)
+        else console.log("     -> " + x)
+    }
+
+    const reportRejected = (encryptedTerm, stage, reason, newValue, success) => {
+        rejects.push({
+            rejected: !success,
+            stage: stage,
+            reason: reason,
+            newValue: newValue,
+            encryptedTerm: encryptedTerm,
+        })
+    }
+
+    for(let term of config.encryptedTerms) {
+        const newValue = tryModifyStringOrNumber(term.val)
+        const newDeviceJson = deepclone(originalDeviceJson)
+        updateDeviceField(newDeviceJson, term.env, newValue)
+        const newConfig = parseTrafficAnalysisResult(newDeviceJson)
+        
+        await client.disconnect()
+        client.setDevice(newConfig.device)
+        const reset = await client.reset(); steplog("reset: " + reset)
+
+        const connect = await client.connect(); 
+        if(connect === "connack") steplog("connect: " + connect)
+        else {
+            steplog("connect: " + connect, true)
+            reportRejected(term, "connect", connect, newValue)
+            break;
+        }
+
+        const publish = await client.publish(); 
+        if(publish === "success") steplog("publish: " + publish)
+        else {
+            steplog("publish: " + publish, true)
+            reportRejected(term, "publish", publish, newValue)
+            break;
+        }
+
+        const subscribe = await client.subscribe()
+        if(subscribe === "success") steplog("subscribe: " + subscribe)
+        else {
+            steplog("subscribe: " + subscribe, true)
+            reportRejected(term, "subscribe", subscribe, newValue)
+            break;
+        }
+
+        const unsubscribe = await client.unsubscribe()
+        if(unsubscribe === "success") steplog("unsubscribe: " + unsubscribe)
+        else {
+            steplog("unsubscribe: " + unsubscribe, true)
+            reportRejected(term, "unsubscribe", unsubscribe, newValue)
+            break;
+        }
+
+
+        const disconnect = await client.disconnect()
+        if(disconnect === "closed") steplog("disconnect: " + disconnect)
+        else {
+            steplog("disconnect: " + disconnect, true)
+            reportRejected(term, "disconnect", disconnect, newValue)
+            break;
+        }
+        
+        reportRejected(term, "", "", newValue, true)
+    }
+
+    config.device = originalDevice
 })
 
 app.get('/mqtt/initClient', async (req, res, next) => {
@@ -362,6 +648,7 @@ app.get('/mqtt/initClient', async (req, res, next) => {
 })
 
 app.get('/mqtt/connect', async (req, res, next) => { 
+    // console.log("connect")
     const success = await client.connect()
     res.send(success)
 })
