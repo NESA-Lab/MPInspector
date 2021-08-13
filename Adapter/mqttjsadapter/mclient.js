@@ -448,7 +448,7 @@ app.get('/mqtt/config/initClient', async (req, res, next) => {
 
 app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
     console.log(config.normalFields)
-    const targets = [...config.encryptedTerms, ...config.normalFields]
+    const targets = [...config.encryptedFields, ...config.normalFields]
     console.log(`[Traffic Analysis] Analyzing encrypted fields, ${targets.length} is found`)
     const deepclone = (x) => JSON.parse(JSON.stringify(x))
     const originalDeviceJson = config.deviceJson
@@ -513,9 +513,15 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         console.log("Analysing")
         console.log(term)
         let newConfig = null
+        const getOutputTerm = () => {
+            const t = {...term}
+            delete t.edit
+            return t
+        }
+        const newDeviceJson = deepclone(originalDeviceJson)
         if(term.encrypted)
         {
-            const newDeviceJson = deepclone(originalDeviceJson)
+            
             // update password field, make sure it uses raw
             updateDeviceField(newDeviceJson, [...term.env, "raw"], term.val)
             updateDeviceField(newDeviceJson, [...term.env, "method"], "use_raw")
@@ -534,7 +540,7 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         let result = await runAllStages(term.env[0])
         if(!result.success) {
             analysis.push({
-                field: term,
+                field: getOutputTerm(),
                 newValue: term.val,
                 replayable: false,
                 modifiable: null,
@@ -565,7 +571,7 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         if(!term.encrypted) term.edit.restore()
         if(result.success) {
             analysis.push({
-                field: term,
+                field: getOutputTerm(),
                 newValue: newValue,
                 replayable: true,
                 modifiable: true,
@@ -575,7 +581,7 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         }
         else {
             analysis.push({
-                field: term,
+                field: getOutputTerm(),
                 newValue: newValue,
                 replayable: true,
                 modifiable: false,
