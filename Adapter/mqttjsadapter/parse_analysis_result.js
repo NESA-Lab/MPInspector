@@ -116,11 +116,20 @@ class ParserContext
             data: new Array,
             push: (x)=> this.env.data.push(x),
             pop: () => this.env.data.pop(),
-            back: () => this.env.data[this.env.data.length-1]
+            back: () => this.env.data[this.env.data.length-1],
+            parsedObjectParent: null
         }
 
         this.encryptedTerms = []
         this.encryptedFields = []
+        this.normalFields = []
+    }
+
+    newObj()
+    {
+        const o = {}
+        this.env.parsedObjectParent = o
+        return o
     }
 
     error(msg) {
@@ -131,14 +140,57 @@ class ParserContext
         this.encryptedTerms.push({
             env: [ ...this.env.data, key ],
             val: value,
-            method: method
+            method: method,
+            encrypted: true
         })
     }
     addEncryptedField(value) {
         this.encryptedFields.push({
             env: [...this.env.data],
-            val: value
+            val: value,
+            encrypted: true
         })
+    }
+
+    addNormalField(edit) {
+        this.normalFields.push({
+            env: [...this.env.data],
+            val: edit.val,
+            encrypted: false,
+            edit: edit
+        })
+    }
+
+    updateNormalRestore() {
+        for(let t of this.normalFields)
+        {
+            t.edit.updateRestoreValue()
+            t.val = t.edit.val
+        }
+    }
+}
+
+class Edit {
+    constructor(parent, key)
+    {
+        this.parent = parent
+        this.key = key
+        this.val = this.parent[this.key]
+    }
+
+    update(newval)
+    {
+        this.parent[this.key] = newval
+    }
+
+    restore()
+    {
+        this.parent[this.key] = this.val
+    }
+
+    updateRestoreValue()
+    {
+        this.val = this.parent[this.key]
     }
 }
 
@@ -157,8 +209,8 @@ const parseTrafficAnalysisResult = (source, raw, opts) =>
     // connect
     ctx.env.push("CONNECT")
         device.platform_name = source.platform;
-        device.username = parseIdOrUsername(CONNECT.username, source.platform, 'username')
-        device.clientId = parseIdOrUsername(CONNECT.clientID, source.platform, 'clientId')
+        device.username = parseIdOrUsername(CONNECT.username, source.platform, 'username', device)
+        device.clientId = parseIdOrUsername(CONNECT.clientID, source.platform, 'clientId', device)
         device.password = parsePassword(CONNECT.password)
         
         for(let key of Object.keys(device))
@@ -167,36 +219,48 @@ const parseTrafficAnalysisResult = (source, raw, opts) =>
                 delete device[key]
             }
         }
+        ctx.updateNormalRestore()
     ctx.env.pop()
 
     // subscribe
-    ctx.env.push("SUBSCRIBE")
+    ctx.env.push("SUBSCRIBE"); ctx.env.push("topics")
         device.sub_defaults = {
             qos: parseQos(SUBSCRIBE.topics),
             topic: parseTopic(SUBSCRIBE.topics)
         }
-    ctx.env.pop()
+        ctx.addNormalField(new Edit(device.sub_defaults, "topic"))
+    ctx.env.pop(); ctx.env.pop()
 
     // unsubscribe
-    ctx.env.push("UNSUBSCRIBE")
+    ctx.env.push("UNSUBSCRIBE"); ctx.env.push("topics")
         device.unsub_defaults = {
             topic: parseTopic(UNSUBSCRIBE.topics),
             qos: parseQos(UNSUBSCRIBE.topics)
         }
-    ctx.env.pop()
+        ctx.addNormalField(new Edit(device.unsub_defaults, "topic"))
+    ctx.env.pop(); ctx.env.pop()
 
     // publish
-    ctx.env.push("PUBLISH")
+    ctx.env.push("PUBLISH"); 
+        ctx.env.push("topic")
+        const pub_topic = parseTopic(PUBLISH.topic)
+        const pub_qos = parseQos(PUBLISH.topic)
+        ctx.env.pop()
+
+        ctx.env.push("payload")
         device.pub_defaults = {
-            topic: parseTopic(PUBLISH.topic),
-            qos: parseQos(PUBLISH.topic),
+            topic: pub_topic,
+            qos: pub_qos,
             payload: parsePayload(PUBLISH.payload),
         }
+        ctx.addNormalField(new Edit(device.pub_defaults, "topic"))
+        ctx.env.pop()
     ctx.env.pop()
     return {
         device: device,
         encryptedTerms: ctx.encryptedTerms,
-        encryptedFields: ctx.encryptedFields
+        encryptedFields: ctx.encryptedFields,
+        normalFields: ctx.normalFields
     }
 }
 
@@ -230,10 +294,16 @@ const parseTopic = (topic)=> {
 
         if(key !== "qos") {
             result.push(subtopic[key])
+            
         }
     }
 
-    return result.join('/')
+    const topic_str = result.join('/')
+    // ctx.env.push("topic")
+    
+    // ctx.env.pop()
+
+    return topic_str;
 }
 
 
@@ -273,6 +343,7 @@ const parsePayload = (payload) => {
         if(payload.length === 2 &&
             payload[0].method === "senc" &&
             payload[1].method === "md5") {
+                // ctx.addEncryptedTerm
                 // ctx.addEncryptedTerm()
                 const info = payload[0]
                 return {
@@ -305,15 +376,16 @@ const parsePayload = (payload) => {
 //     the value is an **array** with one string
 //   2. array containing only one string
 //   3. array that contains several objects, an object has the keyword "method"
-const parseIdOrUsername = (id, platform, idOrUsername) => {
+const parseIdOrUsername = (id, platform, idOrUsername, parent) => {
     if(id === undefined) {
         return undefined
     }
-    if(typeof id == 'string') {
-        return id
-    }
+    let result = ""
 
-    if(Array.isArray(id)) {
+    if(typeof id == 'string') {
+        result = id
+    }
+    else if(Array.isArray(id)) {
         if(id.length === 0) {
             return ""
         }
@@ -326,6 +398,7 @@ const parseIdOrUsername = (id, platform, idOrUsername) => {
         const vals = []
         const obj = {}
         let method = "uri"
+        
         for(let [key, val] of iterateArray(id)) {
             if(key === "method") {
                 method = val
@@ -344,14 +417,14 @@ const parseIdOrUsername = (id, platform, idOrUsername) => {
             }
             if(platform === "alitcp") {
                 if(idOrUsername === 'username') {
-                    return uris.join('&')
+                    result = uris.join('&')
                 }
-                return uris.join("|") + "|"
+                else result = uris.join("|") + "|"
             }
             else if(platform === "bosch") {
-                return uris.join("@")
+                result = uris.join("@")
             }
-            return uris.join("/")
+            else result = uris.join("/")
         }
         else if(method === "urlencode")
         {
@@ -359,9 +432,16 @@ const parseIdOrUsername = (id, platform, idOrUsername) => {
             for(let [name, val] of iterateArray(obj.params)) {
                 params.push(`${name}=${val}`)
             }
-            return `${obj.url}${params.join('&')}`
+            result = `${obj.url}${params.join('&')}`
         }
     }
+    if(result.length)
+    {
+        ctx.env.push(idOrUsername)
+        ctx.addNormalField(new Edit(parent, idOrUsername))
+        ctx.env.pop(idOrUsername)
+    }
+    return result;
 }
 
 // encrytion decriptor, identified by keyword

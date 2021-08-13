@@ -27,6 +27,104 @@ encryptedFields:
       - CONNECT
       - password
     val: mosq_dummy_password
+    encrypted: true
+normalFields:
+  - env:
+      - CONNECT
+      - username
+    val: Unit02&a1EQiFSQ6Js
+    encrypted: false
+    edit:
+      parent:
+        host: 127.0.0.1
+        port: 9091
+        platform_name: alitcp
+        username: Unit02&a1EQiFSQ6Js
+        clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+        password:
+          method: use_raw
+          key: skDev
+          deviceId: mpinspector
+          deviceName: Unit02
+          productKey: a1EQiFSQ6Js
+          raw: mosq_dummy_password
+        sub_defaults:
+          topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+        unsub_defaults:
+          topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+          qos: 1
+        pub_defaults:
+          topic: a1EQiFSQ6Js/Unit02/user/update
+          payload:
+            method: fixed
+            data: '{"msg1":"hello"}'
+      key: username
+      val: Unit02&a1EQiFSQ6Js
+  - env:
+      - CONNECT
+      - clientId
+    val: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+    encrypted: false
+    edit:
+      parent:
+        host: 127.0.0.1
+        port: 9091
+        platform_name: alitcp
+        username: Unit02&a1EQiFSQ6Js
+        clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+        password:
+          method: use_raw
+          key: skDev
+          deviceId: mpinspector
+          deviceName: Unit02
+          productKey: a1EQiFSQ6Js
+          raw: mosq_dummy_password
+        sub_defaults:
+          topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+        unsub_defaults:
+          topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+          qos: 1
+        pub_defaults:
+          topic: a1EQiFSQ6Js/Unit02/user/update
+          payload:
+            method: fixed
+            data: '{"msg1":"hello"}'
+      key: clientId
+      val: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+  - env:
+      - SUBSCRIBE
+      - topics
+    val: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    encrypted: false
+    edit:
+      parent:
+        topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+      key: topic
+      val: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+  - env:
+      - UNSUBSCRIBE
+      - topics
+    val: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+    encrypted: false
+    edit:
+      parent:
+        topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+        qos: 1
+      key: topic
+      val: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
+  - env:
+      - PUBLISH
+      - payload
+    val: a1EQiFSQ6Js/Unit02/user/update
+    encrypted: false
+    edit:
+      parent:
+        topic: a1EQiFSQ6Js/Unit02/user/update
+        payload:
+          method: fixed
+          data: '{"msg1":"hello"}'
+      key: topic
+      val: a1EQiFSQ6Js/Unit02/user/update
 deviceJson:
   CONNACK: []
   SUBACK:

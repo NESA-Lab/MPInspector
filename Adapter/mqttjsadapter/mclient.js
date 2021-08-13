@@ -44,7 +44,7 @@ class MyMqttClient {
 
     setDevice(device, log) {
         if(device == null) return;
-        console.log('device properties: ', device.properties);
+        // console.log('device properties: ', device.properties);
         const additional_connect_args = device.additional_connect_args || {}
         const connectionArgs = {
             host: device.host,
@@ -290,7 +290,14 @@ class MyMqttClient {
                 this.resolve_fn = resolve
                 this.resolve_handled = false
                 const sub = this.device.sub_defaults
-                this.client.subscribe(sub.topic, {properties: sub.properties, qos: sub.qos, enforceSend: true}, (error)=>{
+                const subargs = {properties: sub.properties, qos: sub.qos, enforceSend: true}
+                for(let argkey of Object.keys(subargs))
+                {
+                    if(subargs[argkey] === undefined){
+                        delete subargs[argkey]
+                    }
+                }
+                this.client.subscribe(sub.topic, subargs, (error)=>{
                     
                     if(!this.resolve_handled) 
                     {
@@ -440,7 +447,8 @@ app.get('/mqtt/config/initClient', async (req, res, next) => {
 })
 
 app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
-    const targets = config.encryptedFields
+    console.log(config.normalFields)
+    const targets = [...config.encryptedTerms, ...config.normalFields]
     console.log(`[Traffic Analysis] Analyzing encrypted fields, ${targets.length} is found`)
     const deepclone = (x) => JSON.parse(JSON.stringify(x))
     const originalDeviceJson = config.deviceJson
@@ -502,11 +510,20 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         const resetresult = await client.reset(); steplog("reset: " + resetresult)
     }
     for(let term of targets) {
-        const newDeviceJson = deepclone(originalDeviceJson)
-        // update password field, make sure it uses raw
-        updateDeviceField(newDeviceJson, [...term.env, "raw"], term.val)
-        updateDeviceField(newDeviceJson, [...term.env, "method"], "use_raw")
-        let newConfig = parseTrafficAnalysisResult(newDeviceJson, undefined)
+        console.log("Analysing")
+        console.log(term)
+        let newConfig = null
+        if(term.encrypted)
+        {
+            const newDeviceJson = deepclone(originalDeviceJson)
+            // update password field, make sure it uses raw
+            updateDeviceField(newDeviceJson, [...term.env, "raw"], term.val)
+            updateDeviceField(newDeviceJson, [...term.env, "method"], "use_raw")
+            newConfig = parseTrafficAnalysisResult(newDeviceJson)
+        }
+        else {
+            newConfig = config
+        }
         await client.disconnect()
         client = new MyMqttClient;
         client.detail_err_ret = true
@@ -517,7 +534,7 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         let result = await runAllStages(term.env[0])
         if(!result.success) {
             analysis.push({
-                encryptedField: term,
+                field: term,
                 newValue: term.val,
                 replayable: false,
                 modifiable: null,
@@ -528,8 +545,16 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         }
 
         const newValue = tryModifyStringOrNumber(term.val)
-        updateDeviceField(newDeviceJson, [...term.env, "raw"], newValue)
-        newConfig = parseTrafficAnalysisResult(newDeviceJson, undefined)
+        if(term.encrypted)
+        {
+            updateDeviceField(newDeviceJson, [...term.env, "raw"], newValue)
+            newConfig = parseTrafficAnalysisResult(newDeviceJson, undefined)
+        }
+        else {
+            newConfig = config
+            term.edit.update(newValue)
+        }
+
         await client.disconnect()
         client = new MyMqttClient;
         client.detail_err_ret = true
@@ -537,9 +562,10 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         
         // the server will check the timestamp
         result = await runAllStages(term.env[0])
+        if(!term.encrypted) term.edit.restore()
         if(result.success) {
             analysis.push({
-                encryptedField: term,
+                field: term,
                 newValue: newValue,
                 replayable: true,
                 modifiable: true,
@@ -549,7 +575,7 @@ app.get('/mqtt/config/analyze/fields', async (req, res, next) => {
         }
         else {
             analysis.push({
-                term: term,
+                field: term,
                 newValue: newValue,
                 replayable: true,
                 modifiable: false,
@@ -583,8 +609,12 @@ app.get('/mqtt/config/analyze/terms', async (req, res, next) => {
         })
     }
 
-    for(let term of config.encryptedTerms) {
+    for(let term of [...config.encryptedTerms, ...config.normalFields]) {
         const newValue = tryModifyStringOrNumber(term.val)
+        if(term.encrypted)
+        {
+
+        }
         const newDeviceJson = deepclone(originalDeviceJson)
         updateDeviceField(newDeviceJson, term.env, newValue)
         const newConfig = parseTrafficAnalysisResult(newDeviceJson)
