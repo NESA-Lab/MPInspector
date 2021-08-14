@@ -43,12 +43,12 @@ public class MQTTSemantics {
 		this.platformtype = platformtype;
 	}
 
-	public static void main( String[] args ) //args1:filename args2:platformtype
+	public static void main( String[] args ) //args0: platform
     {
 		MQTTSemantics semantic = new MQTTSemantics();
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype("tuya");
+		semantic.setPlatformtype(args[0]);
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";
