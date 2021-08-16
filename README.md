@@ -27,7 +27,7 @@ install the prerequisites:
 
 
 # How to cite us
-
+```
 @inproceedings{wang2021mpinspector,
   title={MPInspector: A Systematic and Automatic Approach for Evaluating the Security of IoT Messaging Protocols},
   author={ Qinying Wang and Shouling Ji and Yuan Tian and Xuhong Zhang and Binbin Zhao and Yuhong Kan and Zhaowei Lin and Changting Lin and Shuiguang Deng and Alex X. Liu and Reheem Beyah},
@@ -35,6 +35,5 @@ install the prerequisites:
   pages={},
   year={2021}
 }
-
-
+```
 
