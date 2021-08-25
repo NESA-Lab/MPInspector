@@ -21,9 +21,23 @@ install the prerequisites:
 
 # Usage
 
-> mvn exec:java -D"exec.mainClass"="main.java.mpinspector.MQTTSemantics" -D"exec.arguments"=${platformtype}
+**1. NLP-based semantics extraction**
 
->  Other platforms: mvn exec:java -Dexec.mainClass="main.java.mpinspector.MQTTSemantics"  -Dexec.arguments=${platformtype}
+NLPbasedsemanticsextraction.py automatically extract the parameter semantics based on the IoT platform documents in HTML format.
+
+**Example:**
+
+```
+python NLPbasedsemanticsextraction.py -df="./alimqtt/alidoc2.html"
+```
+
+**2. Traffic-based semantics extraction and the semantics assignment**
+
+To be updating
+
+**3. Interaction logic extraction**
+
+To be updating
 
 
 # How to cite us

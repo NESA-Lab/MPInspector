@@ -5,11 +5,12 @@ from flair.data import Sentence
 from flair.models import SequenceTagger
 from flair.models import MultiTagger
 from stanfordcorenlp import StanfordCoreNLP
-
+from webpageprocess import preprocess
 
 import torch
 import json
 import copy
+import argparse
 
 # print(torch.cuda.is_available())
 # use type() to infer the objection
@@ -779,61 +780,77 @@ def searchCompleteDefinitionInner(allDefinitions,keyWord,alreadyExistedKeys):
         keyWordDef['items'][i] = resObj['def']
         alreadyExistedKeys = resObj['keys']
     return {'def':keyWordDef,'keys':alreadyExistedKeys}
+
+
+
 ####################################################
 #                    main procedure                #
 ####################################################
 
-# DEBUG
-keyWords = ['clientId', 'password', 'username' ,'topic','payload','content']
-# keyWords = ['SAS token']
-# keyWords = ['a']
-# DEBUG
-# tests = [{'key':'ClientId','sentence':'mqttClientId: clientId+"|sec=3,sigmeth=hmacsha1,time=132323232|"'},{'key':'password','sentence':'mqttPassword: sign_hmac(dSec,content)sign'},{'key': 'SAS','sentence':'SAS sig={sig-str}&se={expiry}&skn={po}&sr={URL-enc}'},{'key':'Username','sentence':'mqttUsername: dName+"&"+pKey'}]
-# for test in tests:
-#     print(processStructuredKeyWord(test['key'],test['sentence']))
-# targetfile = "doc2"
-targetfile = "./alimqtt/alidoc2"
-# targetfile = "./other platforms/alicoap data/Establish connections over CoAP - Device Access_ Alibaba Cloud Documentation Center"
-outputfile = open(targetfile+'_cfe.output', "w")  
-allDefinitions = []
-relatedItems = []
-i = 0
-while i<len(keyWords):
-    keyWord = keyWords[i]
-    print("######### testing " + keyWord)
-    sentences = findSentencesContainKeyWords(targetfile+'result.txt',keyWord)
-    tabledata = findTabledatacontainKeywords(targetfile+"table.txt",keyWord)
-    ### now we have sentences that contains keyword and table data that contains keyword
-    ### First we try to find StructureDefinitionOnly and get the keyword semantics
-    relatedItems = tryToFindStructuredDefinitionOnly(keyWord,sentences, tabledata)
-    if len(relatedItems['items']) == 0:
-        relatedItems = tryToFindStrucredDefinitionwithNLP(keyWord,sentences,tabledata)
-        if len(relatedItems['items']) == 0:
-            # add the value of table data to sentences
-            mergedsentences = mergeSentencewithTabledata(sentences,tabledata)
-            relatedItems = processKeyWordWithNlp(keyWord,sentences)
-    # relatedItems = tryToFindStructuredDefinition(keyWord,sentences)
-    # relatedItems = processKeyWordWithNlp(keyWord,sentences)
-    if len(relatedItems['items']) != 0:
-        allDefinitions.append(relatedItems)
+def main():
     # DEBUG
-    print(keyWord)
-    print(':')
-    print(relatedItems)
-    print(createRelatedItemsString(relatedItems,0))
-    outputfile.write(keyWord)
-    outputfile.write('\n:\n')
-    outputfile.write(json.dumps(relatedItems))
-    outputfile.write('\n\n')
-    outputfile.write(createRelatedItemsString(relatedItems,0)+'\n')
+    keyWords = ['clientId', 'password', 'username' ,'topic','payload','content']
+    # keyWords = ['SAS token']
+    # keyWords = ['a']
+    # DEBUG
+    # tests = [{'key':'ClientId','sentence':'mqttClientId: clientId+"|sec=3,sigmeth=hmacsha1,time=132323232|"'},{'key':'password','sentence':'mqttPassword: sign_hmac(dSec,content)sign'},{'key': 'SAS','sentence':'SAS sig={sig-str}&se={expiry}&skn={po}&sr={URL-enc}'},{'key':'Username','sentence':'mqttUsername: dName+"&"+pKey'}]
+    # for test in tests:
+    #     print(processStructuredKeyWord(test['key'],test['sentence']))
+    # targetfile = "doc2"
+    # targetfile = "./alimqtt/alidoc2"    #  input files
+    # targetfile = "./other platforms/alicoap data/Establish connections over CoAP - Device Access_ Alibaba Cloud Documentation Center"
+    # targethtml = "./alimqtt/alidoc2.html"
+    parser = argparse.ArgumentParser(description="NLP based semantics extraction method in MPInspector")
+    parser.add_argument('-df','--docfile')
+    args = parser.parse_args()
+    # print(args)
+    targethtml = args.docfile
+    # print(targethtml)
+    targetfile = preprocess(targethtml)
+    print(targetfile)
+    outputfile = open(targetfile+'_cfe.output', "w")  
+    allDefinitions = []
+    relatedItems = []
+    i = 0
+    while i<len(keyWords):
+        keyWord = keyWords[i]
+        print("######### testing " + keyWord)
+        sentences = findSentencesContainKeyWords(targetfile+'result.txt',keyWord)
+        tabledata = findTabledatacontainKeywords(targetfile+"table.txt",keyWord)
+        ### now we have sentences that contains keyword and table data that contains keyword
+        ### First we try to find StructureDefinitionOnly and get the keyword semantics
+        relatedItems = tryToFindStructuredDefinitionOnly(keyWord,sentences, tabledata)
+        if len(relatedItems['items']) == 0:
+            relatedItems = tryToFindStrucredDefinitionwithNLP(keyWord,sentences,tabledata)
+            if len(relatedItems['items']) == 0:
+                # add the value of table data to sentences
+                mergedsentences = mergeSentencewithTabledata(sentences,tabledata)
+                relatedItems = processKeyWordWithNlp(keyWord,sentences)
+        # relatedItems = tryToFindStructuredDefinition(keyWord,sentences)
+        # relatedItems = processKeyWordWithNlp(keyWord,sentences)
+        if len(relatedItems['items']) != 0:
+            allDefinitions.append(relatedItems)
+        # DEBUG
+        print(keyWord)
+        print(':')
+        print(relatedItems)
+        print(createRelatedItemsString(relatedItems,0))
+        outputfile.write(keyWord)
+        outputfile.write('\n:\n')
+        outputfile.write(json.dumps(relatedItems))
+        outputfile.write('\n\n')
+        outputfile.write(createRelatedItemsString(relatedItems,0)+'\n')
+        outputfile.write('---------------------------------------------------\n')
+        keyWords = createNewKeyWordsList(keyWords,relatedItems)
+        i+=1
     outputfile.write('---------------------------------------------------\n')
-    keyWords = createNewKeyWordsList(keyWords,relatedItems)
-    i+=1
-outputfile.write('---------------------------------------------------\n')
-outputfile.write('\npassword def dict:\n')
-passWordDef = searchCompleteDefinition(allDefinitions,'password')
-print(passWordDef)
-outputfile.write(json.dumps(passWordDef))
-outputfile.close()
-    
+    outputfile.write('\npassword def dict:\n')
+    passWordDef = searchCompleteDefinition(allDefinitions,'password')
+    print(passWordDef)
+    outputfile.write(json.dumps(passWordDef))
+    outputfile.close()
+
+
+if __name__ == '__main__':
+    main()
 
