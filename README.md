@@ -15,6 +15,8 @@ install the prerequisites:
 
 - Node v12.16.1
 
+- Maven v3.6.2
+
 - use pip to install Stanford Core NLP
 
   `pip install stanfordcorenlp`
@@ -33,7 +35,14 @@ python NLPbasedsemanticsextraction.py -df="./alimqtt/alidoc2.html"
 
 **2. Traffic-based semantics extraction and the semantics assignment**
 
-To be updating
+Run the maven project *MessageSemanticsExtraction* and the extracted semantics results are in the folder *traffic_analysis/${platformname}*.
+
+**Example:**
+
+```
+mvn compile
+mvn exec:java -D"exec.mainClass"="main.java.mpinspector.MQTTSemantics" -D"exec.arguments"=${platformname}
+```
 
 **3. Interaction logic extraction**
 
