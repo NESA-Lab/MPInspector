@@ -386,7 +386,7 @@ app.get('/', (req, res)=>{
 app.post('/mqtt/config/fromTrafficAnalysis', async (req, res, next) => {
     console.log("[Traffic Analysis] Load Json")
     const conf = JSON.parse(req.rawBody)
-    conf.data = JSON.parse(conf.data0);
+    conf.data = JSON.parse(conf.data0); //
     conf.raw = JSON.parse(conf.data1)
     
     if(conf.data.SERVER === undefined)
@@ -429,6 +429,7 @@ app.post('/mqtt/config/fromTrafficAnalysis', async (req, res, next) => {
         YamlWrite(conf.args.debug_result_yaml_save_path, c)
     }
     res.send(config)
+    // console.log("Parsing finished")
 })
 
 // app.get('/mqtt/config/fill', async (req, res, next) => {

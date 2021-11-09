@@ -1,16 +1,17 @@
 device:
   host: 127.0.0.1
-  port: 9091
+  port: '9091'
+  protocol: mqtt
   platform_name: alitcp
   username: Unit02&a1EQiFSQ6Js
   clientId: '12346|securemode=3,signmethod=hmacsha1|'
   password:
-    method: use_raw
-    key: skDev
+    method: ali_password
+    key: aaa
     deviceId: '12346'
     deviceName: Unit02
     productKey: a1EQiFSQ6Js
-    raw: mosq_dummy_password
+    raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
   sub_defaults:
     topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
   unsub_defaults:
@@ -26,7 +27,7 @@ encryptedFields:
   - env:
       - CONNECT
       - password
-    val: mosq_dummy_password
+    val: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
     encrypted: true
 normalFields:
   - env:
@@ -37,17 +38,18 @@ normalFields:
     edit:
       parent:
         host: 127.0.0.1
-        port: 9091
+        port: '9091'
+        protocol: mqtt
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
         clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
-          method: use_raw
-          key: skDev
+          method: ali_password
+          key: aaa
           deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
-          raw: mosq_dummy_password
+          raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
         sub_defaults:
           topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
         unsub_defaults:
@@ -68,17 +70,18 @@ normalFields:
     edit:
       parent:
         host: 127.0.0.1
-        port: 9091
+        port: '9091'
+        protocol: mqtt
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
         clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
-          method: use_raw
-          key: skDev
+          method: ali_password
+          key: aaa
           deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
-          raw: mosq_dummy_password
+          raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
         sub_defaults:
           topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
         unsub_defaults:
@@ -152,7 +155,7 @@ deviceJson:
   CONNECT:
     - password:
         - method: hmacsha1
-          encry_key: skDev
+          encry_key: aaa
           encry_term:
             - deviceId:
                 - '12346'
@@ -220,17 +223,18 @@ deviceJson:
   platform: alitcp
   SERVER:
     host: 127.0.0.1
-    port: 9091
+    port: '9091'
+    protocol: mqtt
     platform_name: alitcp
     username: Unit02&a1EQiFSQ6Js
     clientId: '12346|securemode=3,signmethod=hmacsha1|'
     password:
-      method: use_raw
-      key: skDev
+      method: ali_password
+      key: aaa
       deviceId: '12346'
       deviceName: Unit02
       productKey: a1EQiFSQ6Js
-      raw: mosq_dummy_password
+      raw: 4400E632DB2B16AD54A7D522D2C6919EC1FBA2D2
     sub_defaults:
       topic: sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply
     unsub_defaults:
@@ -242,11 +246,12 @@ deviceJson:
         method: fixed
         data: '{"msg3":"hello"}'
 deviceArgs:
-  debug_result_yaml_save_path: cache/ali.yml
-  parsingOptions.enforcePasswordUseRaw: true
-  parsingOptions.passwordRaw: mosq_dummy_password
+  debug_result_yaml_save_path: ../mqttjsadapter/platforms/mos_v3/cache.yml
   userFilledTerms.host: 127.0.0.1
-  userFilledTerms.port: 9091
-parsingOpts:
+  userFilledTerms.port: '9091'
+  userFilledTerms.protocol: mqtt
+  userFilledTerms.alitcp.password.key: aaa
   enforcePasswordUseRaw: true
+  parsingOptions.passwordRaw: mosq_dummy_password
+parsingOpts:
   passwordRaw: mosq_dummy_password

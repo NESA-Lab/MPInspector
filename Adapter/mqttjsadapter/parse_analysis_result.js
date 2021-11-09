@@ -212,7 +212,6 @@ const parseTrafficAnalysisResult = (source, raw, opts) =>
         device.username = parseIdOrUsername(CONNECT.username, source.platform, 'username', device)
         device.clientId = parseIdOrUsername(CONNECT.clientID, source.platform, 'clientId', device)
         device.password = parsePassword(CONNECT.password)
-        
         for(let key of Object.keys(device))
         {
             if(device[key] == undefined) {
@@ -452,7 +451,6 @@ const parseIdOrUsername = (id, platform, idOrUsername, parent) => {
 //    - method="hmacsha1"  alitcp password
 const parseEncryption = (enc) => {
     let result = undefined;
-
     if(enc.typ !== undefined) {
         if(enc.typ === "JWT") {
             const token = { ...enc }
@@ -527,6 +525,7 @@ const parseEncryption = (enc) => {
             result.raw = enc.raw
         }
     }
+    // ctx.error("result: "+ result)
     return result
 }
 
@@ -554,7 +553,7 @@ const parsePassword = (passwd) => {
     // if it is an encryption descriptor
     ctx.env.push("password")
         const password = parseEncryption(passwd)
-        if(ctx.raw?.password && !password.raw)
+        if(ctx.raw.password && !password.raw)
         {
             password.raw = ctx.raw.password
         }
