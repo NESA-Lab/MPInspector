@@ -1,13 +1,12 @@
 device:
   host: 127.0.0.1
   port: '9091'
-  protocol: mqtt
   platform_name: alitcp
   username: Unit02&a1EQiFSQ6Js
   clientId: '12346|securemode=3,signmethod=hmacsha1|'
   password:
     method: ali_password
-    key: aaa
+    key: skDev
     deviceId: '12346'
     deviceName: Unit02
     productKey: a1EQiFSQ6Js
@@ -39,13 +38,12 @@ normalFields:
       parent:
         host: 127.0.0.1
         port: '9091'
-        protocol: mqtt
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
         clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
           method: ali_password
-          key: aaa
+          key: skDev
           deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
@@ -71,13 +69,12 @@ normalFields:
       parent:
         host: 127.0.0.1
         port: '9091'
-        protocol: mqtt
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
         clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
           method: ali_password
-          key: aaa
+          key: skDev
           deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
@@ -155,7 +152,7 @@ deviceJson:
   CONNECT:
     - password:
         - method: hmacsha1
-          encry_key: aaa
+          encry_key: skDev
           encry_term:
             - deviceId:
                 - '12346'
@@ -224,13 +221,12 @@ deviceJson:
   SERVER:
     host: 127.0.0.1
     port: '9091'
-    protocol: mqtt
     platform_name: alitcp
     username: Unit02&a1EQiFSQ6Js
     clientId: '12346|securemode=3,signmethod=hmacsha1|'
     password:
       method: ali_password
-      key: aaa
+      key: skDev
       deviceId: '12346'
       deviceName: Unit02
       productKey: a1EQiFSQ6Js
@@ -249,8 +245,6 @@ deviceArgs:
   debug_result_yaml_save_path: ../mqttjsadapter/platforms/mos_v3/cache.yml
   userFilledTerms.host: 127.0.0.1
   userFilledTerms.port: '9091'
-  userFilledTerms.protocol: mqtt
-  userFilledTerms.alitcp.password.key: aaa
   enforcePasswordUseRaw: true
   parsingOptions.passwordRaw: mosq_dummy_password
 parsingOpts:

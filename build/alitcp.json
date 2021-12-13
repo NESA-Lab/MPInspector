@@ -1,0 +1,87 @@
+[
+    {
+        "field": {
+            "env": [
+                "CONNECT",
+                "password"
+            ],
+            "val": "mosq_dummy_password",
+            "encrypted": true
+        },
+        "newValue": "mosq_dummy_passwore",
+        "replayable": true,
+        "modifiable": false,
+        "stage": "connect",
+        "reason": "error: Error: Connection refused: Not authorized"
+    },
+    {
+        "field": {
+            "env": [
+                "CONNECT",
+                "username"
+            ],
+            "val": "Unit02&a1EQiFSQ6Js",
+            "encrypted": false
+        },
+        "newValue": "Unit02&a1EQiFSQ6Jr",
+        "replayable": true,
+        "modifiable": true,
+        "reason": ""
+    },
+    {
+        "field": {
+            "env": [
+                "CONNECT",
+                "clientId"
+            ],
+            "val": "mpinspector|securemode=3,signmethod=hmacsha1|",
+            "encrypted": false
+        },
+        "newValue": "mpinspector|securemode=3,signmethod=hmacsha1}",
+        "replayable": true,
+        "modifiable": true,
+        "reason": ""
+    },
+    {
+        "field": {
+            "env": [
+                "SUBSCRIBE",
+                "topics"
+            ],
+            "val": "sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply",
+            "encrypted": false
+        },
+        "newValue": "sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_replx",
+        "replayable": true,
+        "modifiable": true,
+        "reason": ""
+    },
+    {
+        "field": {
+            "env": [
+                "UNSUBSCRIBE",
+                "topics"
+            ],
+            "val": "sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_reply",
+            "encrypted": false
+        },
+        "newValue": "sys/a1EQiFSQ6Js/Unit02/thing/event/property/post_replx",
+        "replayable": true,
+        "modifiable": true,
+        "reason": ""
+    },
+    {
+        "field": {
+            "env": [
+                "PUBLISH",
+                "payload"
+            ],
+            "val": "a1EQiFSQ6Js/Unit02/user/update",
+            "encrypted": false
+        },
+        "newValue": "a1EQiFSQ6Js/Unit02/user/updatd",
+        "replayable": true,
+        "modifiable": true,
+        "reason": ""
+    }
+]

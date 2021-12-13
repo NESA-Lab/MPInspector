@@ -2,8 +2,10 @@ package main.java.mpinspector;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Properties;
+
 
 import org.apache.commons.codec.binary.Base64;
 import org.json.simple.JSONObject;
@@ -39,16 +43,35 @@ public class MQTTSemantics {
 	 ******************/
 	static String platformtype = "bosch";
 	
+	
 	public void setPlatformtype(String platformtype) {
 		this.platformtype = platformtype;
 	}
 
-	public static void main( String[] args ) //args0: platform
+	public static void main() //args0: platform
     {
 		MQTTSemantics semantic = new MQTTSemantics();
+		String platform = "";
+		
+		// load platform
+		Properties properties = new Properties();
+		String filename = "../build/serverjs.properties";
+		InputStream input;
+		try {
+			input = new FileInputStream(filename);
+			properties.load(input);
+			if(properties.getProperty("platformname") != null)
+				platform = properties.getProperty("platformname");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		semantic.setPlatformtype(platform);
+		
+		
 		// semantic.setPlatformtype("gcp");
 		// tuya  aws  gcp  alitls  alitcp azure bosch
-		semantic.setPlatformtype(args[0]);
+		// semantic.setPlatformtype(args[0]);
 		//load the traffic file 
 		//String path_filedir = "iot prtocol project\\trafficanalysis_mqtt\\"+semantic.platformtype+"\\";
 		//String path_filedir = "mediaresultFile"+semantic.platformtype+"\\";

@@ -6,7 +6,7 @@ from flair.models import SequenceTagger
 from flair.models import MultiTagger
 from stanfordcorenlp import StanfordCoreNLP
 from webpageprocess import preprocess
-
+from Util import Properties
 import torch
 import json
 import copy
@@ -788,6 +788,7 @@ def searchCompleteDefinitionInner(allDefinitions,keyWord,alreadyExistedKeys):
 ####################################################
 
 def main():
+    dictProperties=Properties("build/serverjs.properties").getProperties()
     # DEBUG
     keyWords = ['clientId', 'password', 'username' ,'topic','payload','content']
     # keyWords = ['SAS token']
@@ -800,12 +801,13 @@ def main():
     # targetfile = "./alimqtt/alidoc2"    #  input files
     # targetfile = "./other platforms/alicoap data/Establish connections over CoAP - Device Access_ Alibaba Cloud Documentation Center"
     # targethtml = "./alimqtt/alidoc2.html"
-    parser = argparse.ArgumentParser(description="NLP based semantics extraction method in MPInspector")
-    parser.add_argument('-df','--docfile')
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description="NLP based semantics extraction method in MPInspector")
+    # parser.add_argument('-df','--docfile')
+    # args = parser.parse_args()
     # print(args)
-    targethtml = args.docfile
-    # print(targethtml)
+    targethtml = dictProperties['htmlpath']
+    # targethtml = args.docfile
+    print(targethtml)
     targetfile = preprocess(targethtml)
     print(targetfile)
     outputfile = open(targetfile+'_cfe.output', "w")  

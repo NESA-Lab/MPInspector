@@ -68,6 +68,9 @@ function LoadClientFromConfigObject(client, filename)
     {
         filename = "."
     }
+    if(client.device){
+        client = client.device
+    }
     UseAccessor(client, PasswordGenerator, "password", filename);
     UseAccessor(client["pub_defaults"], PasswordGenerator, "payload", filename);
 

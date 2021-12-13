@@ -1,5 +1,6 @@
 import urllib.request
 import json
+import pickle
 from Util import Properties
 # from jsonpath_rw import jsonpath,parse
 # python37
@@ -12,7 +13,6 @@ if __name__ == "__main__":
     dictProperties=Properties("serverjs.properties").getProperties()
     # print(dictProperties["mqtthost"])
     restUri = "http://127.0.0.1:9123"
-    
     # load semantics file
     api = "/mqtt/config/fromTrafficAnalysis"
     fpath = "../traffic_analysis/" + dictProperties['platformname'] + "/result.json"
@@ -27,21 +27,23 @@ if __name__ == "__main__":
         # data1 = json.load(fp) # raw.json
         # print(data1)
     # data1 = ""  # raw.json
-
+    # print("python: parsing arg")
     args = {}   # extra config, load from mqttjs.properties
-    args["debug_result_yaml_save_path"] = dictProperties["debug_result_yaml_save_path"]
+    args["debug_result_yaml_save_path"] = dictProperties["debug_result_yaml_save_path"]  # platforms/mos_v3/dev1.yml
     args["userFilledTerms.host"] = dictProperties["mqtthost"]
     args["userFilledTerms.port"] = dictProperties["mqttport"]
-    pro = dictProperties["protocol"]
-    if(pro):
+    # pro = dictProperties["protocol"]
+    if("protocol" in dictProperties):
+        pro = dictProperties["protocol"]
         args["userFilledTerms.protocol"] = pro
         if 'mqtts' in pro:
             spro =  dictProperties["secureProtocol"]
             if(spro):
                 args["secureProtocol"] = spro
     # key process to be updated
-    key1 = dictProperties["key1"]
-    if(key1):
+    # key1 = dictProperties["key1"]
+    if("key1" in dictProperties):
+        key1 = dictProperties["key1"]
         type_arg = "userFilledTerms."+dictProperties['platformname'] + '.password.key'
         args[type_arg] = key1
     
@@ -62,12 +64,35 @@ if __name__ == "__main__":
     # req.add_header('Content-type', 'application/x-www-form-urlencoded')
     r = urllib.request.urlopen(req).read()
     print("load semantics success")
-    # print(r.decode('utf8'))
-    # org_obj = json.loads(r.decode('utf8'))
-    # print(org_obj['token'])
     
+    ### InitClient
+    api = "/mqtt/config/initClient"
+    req = urllib.request.Request(url = restUri+api, method='GET')
+    r = urllib.request.urlopen(req).read()
+    print("initClient result: " + r.decode('utf8'))
+
     ### Field Analysis
     api = "/mqtt/config/analyze/fields"
     req = urllib.request.Request(url = restUri+api, method='GET')
     r = urllib.request.urlopen(req).read()
-    print(r.decode('utf8'))
+    # print(r.decode('utf8'))
+    
+    ### store the result in json file
+    data = json.loads(r.decode('utf-8'))
+    # print(data)
+    # fr = open(dictProperties['platformname']+'.pickle','wb')
+    # pickle.dump(data,fr)
+    filename = dictProperties['platformname']+'.json'
+    fr2 = open(filename,'w')
+    json.dump(data, fr2)
+    # print(r1)
+    # org_obj = json.loads(r.decode('utf8'))
+    # print(org_obj['token'])
+    fr2.close()
+    
+    ### load json file
+    # data3=json.load(open(filename))
+    # print(data3)
+
+    
+ 

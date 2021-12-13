@@ -1,0 +1,1 @@
+{CONNECT->clientID=[deviceId, V1], SUBSCRIBE->topics=[qos, V2, productKey, deviceName, V5, V6, V7, V8], UNSUBSCRIBE->topics=[V2, productKey, deviceName, V5, V6, V7, V8], CONNECT->password=[hmac(deviceId,deviceName,productKey)skDev], CONNECT->username=[deviceName, productKey], PUBLISH->topic=[qos, productKey, deviceName, V9, V10]}

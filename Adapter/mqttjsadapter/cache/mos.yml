@@ -3,11 +3,11 @@ device:
   port: 9091
   platform_name: alitcp
   username: Unit02&a1EQiFSQ6Js
-  clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+  clientId: '12346|securemode=3,signmethod=hmacsha1|'
   password:
     method: use_raw
     key: skDev
-    deviceId: mpinspector
+    deviceId: '12346'
     deviceName: Unit02
     productKey: a1EQiFSQ6Js
     raw: mosq_dummy_password
@@ -20,7 +20,7 @@ device:
     topic: a1EQiFSQ6Js/Unit02/user/update
     payload:
       method: fixed
-      data: '{"msg1":"hello"}'
+      data: '{"msg3":"hello"}'
 encryptedTerms: []
 encryptedFields:
   - env:
@@ -40,11 +40,11 @@ normalFields:
         port: 9091
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
-        clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+        clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
           method: use_raw
           key: skDev
-          deviceId: mpinspector
+          deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
           raw: mosq_dummy_password
@@ -57,13 +57,13 @@ normalFields:
           topic: a1EQiFSQ6Js/Unit02/user/update
           payload:
             method: fixed
-            data: '{"msg1":"hello"}'
+            data: '{"msg3":"hello"}'
       key: username
       val: Unit02&a1EQiFSQ6Js
   - env:
       - CONNECT
       - clientId
-    val: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+    val: '12346|securemode=3,signmethod=hmacsha1|'
     encrypted: false
     edit:
       parent:
@@ -71,11 +71,11 @@ normalFields:
         port: 9091
         platform_name: alitcp
         username: Unit02&a1EQiFSQ6Js
-        clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+        clientId: '12346|securemode=3,signmethod=hmacsha1|'
         password:
           method: use_raw
           key: skDev
-          deviceId: mpinspector
+          deviceId: '12346'
           deviceName: Unit02
           productKey: a1EQiFSQ6Js
           raw: mosq_dummy_password
@@ -88,9 +88,9 @@ normalFields:
           topic: a1EQiFSQ6Js/Unit02/user/update
           payload:
             method: fixed
-            data: '{"msg1":"hello"}'
+            data: '{"msg3":"hello"}'
       key: clientId
-      val: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+      val: '12346|securemode=3,signmethod=hmacsha1|'
   - env:
       - SUBSCRIBE
       - topics
@@ -122,7 +122,7 @@ normalFields:
         topic: a1EQiFSQ6Js/Unit02/user/update
         payload:
           method: fixed
-          data: '{"msg1":"hello"}'
+          data: '{"msg3":"hello"}'
       key: topic
       val: a1EQiFSQ6Js/Unit02/user/update
 deviceJson:
@@ -155,14 +155,14 @@ deviceJson:
           encry_key: skDev
           encry_term:
             - deviceId:
-                - mpinspector
+                - '12346'
             - deviceName:
                 - Unit02
             - productKey:
                 - a1EQiFSQ6Js
     - clientID:
         - deviceId:
-            - mpinspector
+            - '12346'
         - V1:
             - 'securemode=3,signmethod=hmacsha1'
     - username:
@@ -174,7 +174,15 @@ deviceJson:
     - getPacketID(): []
   PUBLISH:
     - payload:
+        - '{"msg3":"hello"}'
+        - '{"msg2":"hello"}'
         - '{"msg1":"hello"}'
+        - >-
+          {"code":520,"data":{"topic":"/a1EQiFSQ6Js/Unit02/user/update","productKey":"a1EQiFSQ6Js","deviceName":"Unit02"},"message":"no
+          active session for a1EQiFSQ6Js&Unit02"}
+        - '{"msg6":"hello"}'
+        - '{"msg5":"hello"}'
+        - '{"msg4":"hello"}'
     - topic:
         - qos:
             - AT_MOST_ONCE
@@ -215,11 +223,11 @@ deviceJson:
     port: 9091
     platform_name: alitcp
     username: Unit02&a1EQiFSQ6Js
-    clientId: 'mpinspector|securemode=3,signmethod=hmacsha1|'
+    clientId: '12346|securemode=3,signmethod=hmacsha1|'
     password:
       method: use_raw
       key: skDev
-      deviceId: mpinspector
+      deviceId: '12346'
       deviceName: Unit02
       productKey: a1EQiFSQ6Js
       raw: mosq_dummy_password
@@ -232,7 +240,7 @@ deviceJson:
       topic: a1EQiFSQ6Js/Unit02/user/update
       payload:
         method: fixed
-        data: '{"msg1":"hello"}'
+        data: '{"msg3":"hello"}'
 deviceArgs:
   debug_result_yaml_save_path: cache/mos.yml
   parsingOptions.enforcePasswordUseRaw: true
